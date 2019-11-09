@@ -9,7 +9,7 @@ class Course():
     categories = [0.10,0.45,0.45]
     numInEachCategory = [0,0,0]
     totalAssignedWeights = 0
-    bool fullSemester = True
+    fullSemester = True
 
     # Array representing all assignments with corresponding dates
     assignments = list(map(assignment.Assignment,[]))
