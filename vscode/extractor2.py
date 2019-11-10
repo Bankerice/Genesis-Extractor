@@ -25,12 +25,12 @@ def extractMainPage(robo):
     br = robo
     br.open("https://parents.chclc.org/genesis/sis/view?gohome=true")
     form = br.get_form()
-    form["j_username"] = "3006633@chclc.org"
-    form["j_password"] = "jklamchops"
+    form["j_username"] = "@chclc.org"
+    form["j_password"] = ""
     br.submit_form(form)
 
     #Converts the HTML of the Summary page into a string and uses it to create courses list of Course objects
-    studentID = "3006633"
+    studentID = ""
     br.open("https://parents.chclc.org/genesis/parents?tab1=studentdata&tab2=studentsummary&action=form&studentid="+studentID)
     src = str(br.parsed())
     studentID = src[src.find("Student ID")+34:src.find("Student ID")+41]
@@ -40,16 +40,10 @@ def extractMainPage(robo):
     soup = BeautifulSoup(courseSchedule,"lxml")
     courseSchedule = ''.join(soup.findAll(text=True))
     createCourseList(courseSchedule)
-    # for i in range(len(courses)):
-    #     print(courses[i].period+": " + courses[i].courseName + "\t" + courses[i].teacherName)
 
     #Converts the HTML of the grade page into a string
-    #br.open("document.frmHome.action='parents?tab1=studentdata&tab2=gradebook&tab3=listassignments&studentid="+studentID+"&action=form&date="+)
     br.open("https://parents.chclc.org/genesis/parents?tab1=studentdata&tab2=gradebook&tab3=weeklysummary&action=form&studentid="+studentID)
     src = str(br.parsed)
-    # form['fldMarkingPeriod'].value = 'MP2'
-    # br.submit_form(form)
-    # print(src)
     links = br.get_links()
     urls = [link.get("href") for link in links]
     for i in range(len(links)):
