@@ -8,6 +8,8 @@ import string
 from robobrowser import RoboBrowser
 from bs4 import BeautifulSoup
 
+re._pattern_type = re.Pattern
+
 # Global variables
 studentName = ""
 studentID = ""
@@ -40,26 +42,34 @@ def extractMainPage(robo):
     soup = BeautifulSoup(courseSchedule,"lxml")
     courseSchedule = ''.join(soup.findAll(text=True))
     createCourseList(courseSchedule)
+    # for i in range(len(courses)):
+    #     print(courses[i].period+": " + courses[i].courseName + "\t" + courses[i].teacherName)
 
     #Converts the HTML of the grade page into a string
+    #br.open("document.frmHome.action='parents?tab1=studentdata&tab2=gradebook&tab3=listassignments&studentid="+studentID+"&action=form&date="+)
     br.open("https://parents.chclc.org/genesis/parents?tab1=studentdata&tab2=gradebook&tab3=weeklysummary&action=form&studentid="+studentID)
     src = str(br.parsed)
+    
+    
     links = br.get_links()
     urls = [link.get("href") for link in links]
     for i in range(len(links)):
-        if str(links[i]).__contains__("parent"):
+        #print(links[i])
+        if str(links[i]).__contains__("listassignments"):
             br.follow_link(links[i])
             a = str(br.parsed)
             a = " ".join(a.split())
+            
+            #print(a)
             courseN = a[a.find("name=\"fldCourse\""):len(a)]
             courseN = courseN[courseN.find("option selected"):courseN.find("</select>")]
             courseN = courseN[courseN.find(">")+1:courseN.find("<")-1]
             if (len(courseN)>0):
                 courseN = " ".join(courseN.split())
-
+            
             assignment = a[a.find("<b>"):a.find("</b>")]
             assignment = assignment[3:len(assignment)]
-
+            
             aCategory = a[a.find("Close Window"):len(a)]
             aCategory = aCategory[aCategory.find("</div>")+6:aCategory.find("<td")]
             aCategory = " ".join(aCategory.split())
@@ -85,9 +95,9 @@ def extractMainPage(robo):
                 intPtsRec = int(aPtsRec)
                 for i in range(len(courses)):
                     if (str(courses[i].courseName) == courseN):
-                        courses[i].addAssignment(assignment,intPtsWorth,intPtsRec,aCategory,aDate.date)            
-                
-            
+                        courses[i].addAssignment(assignment,intPtsWorth,intPtsRec,aCategory,aDate.date)
+                        print(courses[i].courseName)
+                        print(courses[i].assignments[0].assignmentName + "\t" + str(courses[i].assignments[0].numPointsReceived))
             
 
 
@@ -179,7 +189,8 @@ def createCourseList(courseSchedule):
         courses.append(course.Course(courseSchedule[i][1],courseSchedule[i][5],courseSchedule[i][0],True if courseSchedule[i][2]=='FY' else False))
     # for i in range(len(courses)):
     #     print(courses[i].period + ": " + courses[i].courseName + "\t" + courses[i].teacherName)
-
+    for i in range(len(courses)):
+        print(courses[i].courseName)
 
 if __name__ == '__main__':
     main()
