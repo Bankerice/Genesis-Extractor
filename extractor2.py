@@ -28,15 +28,14 @@ def extractMainPage(robo):
     br = robo
     br.open("https://parents.chclc.org/genesis/sis/view?gohome=true")
     form = br.get_form()
-    form["j_username"] = "@chclc.org"
+    studentID = ""
+    form["j_username"] = studentID + "@chclc.org"
     form["j_password"] = ""
     br.submit_form(form)
   
     #Converts the HTML of the Summary page into a string and uses it to create courses list of Course objects
-    studentID = ""
     br.open("https://parents.chclc.org/genesis/parents?tab1=studentdata&tab2=studentsummary&action=form&studentid="+studentID)
     src = str(br.parsed())
-    #print(src)
     studentID = src[src.find("Student ID")+34:src.find("Student ID")+41]
     
     courseSchedule = src[src.find('Teacher'):len(src)]
@@ -51,7 +50,6 @@ def extractMainPage(robo):
     #br.open("document.frmHome.action='parents?tab1=studentdata&tab2=gradebook&tab3=listassignments&studentid="+studentID+"&action=form&date="+)
     br.open("https://parents.chclc.org/genesis/parents?tab1=studentdata&tab2=gradebook&tab3=weeklysummary&action=form&studentid="+studentID)
     src = str(br.parsed)
-    
     links = br.get_links()
     urls = [link.get("href") for link in links]
     for i in range(len(links)):
@@ -68,49 +66,92 @@ def extractMainPage(robo):
             code = code[code.find(",")+2:code.find(")")-1]
             courses[i].code = code[0:code.find(":")]
             courses[i].section = code[code.find(":")+1:len(code)+1]
+        #print(courses[i].courseName + ":\t" + courses[i].code + ":" + courses[i].section)
 
     # Create assignment list for each course from course code
     for i in range(len(courses)):
-        br.open("https://parents.chclc.org/genesis/parents?tab1=studentdata&tab2=gradebook&tab3=coursesummary&studentid=" + str(studentID) + "&action=form&courseCode=" + str(courses[i].code) + "&courseSection=" + str(courses[i].section) + "&mp=2")
-        a = str(br.parsed)
-            
-        assignment = a[a.find("<b>"):a.find("</b>")]
-        assignment = assignment[3:len(assignment)]
-        print(assignment)
-        
-        aCategory = a[a.find("Close Window"):len(a)]
-        aCategory = aCategory[aCategory.find("</div>")+6:aCategory.find("<td")]
-        aCategory = " ".join(aCategory.split())
-        aCategory = aCategory[0:aCategory.find("</td>")-1]
-        print(aCategory)
-        aDate = a[a.find("listroweven"):len(a)]
-        aDate = aDate[aDate.find("</div>")+1:aDate.find("style")]
-        aDate = aDate[aDate.find("<div>")+5:aDate.find("</div>")]
-        if (len(aDate)>0):
-            yr = 0
-            if (int(datetime.datetime.today().month) >= int(aDate[0:aDate.find("/")])):
-                yr = datetime.datetime.today().year
-            else:
-                yr = datetime.datetime.today().year - datetime.timedelta(365)
-            aDate = datetime.datetime(yr,int(aDate[0:aDate.find("/")]),int(aDate[aDate.find("/")+1:len(aDate)]))
-        print(aDate)
+        # Attempt to fix assignment-assigned-to-every-course issue by clearing variables - Did not work
+        assignment = ""
+        a = ""
+        a2 = ""
+        aCategory = ""
+        aDate = ""
+        aDate1 = ""
+        year = ""
+        aGrade = ""
+        aPtsRec = ""
+        aPtsWorth = ""
+        intPtsRec = 0
+        intPtsWorth = 0
+        valid = True
 
-        a = " ".join(a.split())
-        aGrade = a[(a.find(" / "))-5:(a.find(" / "))+5]
-        #aGrade = " ".join(aGrade.split())
-        aPtsRec = aGrade[aGrade.find(">")+2:aGrade.find(" / ")]
-        aPtsWorth = aGrade[aGrade.find(" / ")+3:len(aGrade)]
-        print(aGrade)
-        print(aPtsRec)
-        print(aPtsWorth)
-        if (len(aPtsWorth)>0):
-            print("asdfasdf")
-            intPtsWorth = int(aPtsWorth)
-            intPtsRec = int(aPtsRec)
-            courses[i].addAssignment(assignment,intPtsWorth,intPtsRec,aCategory,aDate.date)
+        if (len(courses[i].code)>0): # Does not include study hall
+            br.open("https://parents.chclc.org/genesis/parents?tab1=studentdata&tab2=gradebook&tab3=coursesummary&studentid=" + str(studentID) + "&mp=MP" + str(mp) +"&action=form&courseCode=" + str(courses[i].code) + "&courseSection=" + str(courses[i].section))
+            a = str(br.parsed)
+            a2 = a[a.find("<b>Assignments</b>")+18:a.find("Assignments graded as")]
+            while(a2.__contains__("<b>")):
+                valid = True
+
+                # Assignment Name
+                assignment = a2[a2.find("<b>")+3:a2.find("</b>")]
+                a2 = a2[a2.find("</b>")+4:len(a2)]
+                #print(assignment)
+                
+                # Assignment Category
+                aCategory = a[a.find("Close Window")+10:len(a)]
+                aCategory = aCategory[aCategory.find("</div>")+6:aCategory.find("<td")]
+                aCategory = " ".join(aCategory.split())
+                aCategory = aCategory[0:aCategory.find("</td>")]
+                #print(aCategory)
+
+                # Assignment Date Posted
+                aDate = a[a.find("listrow"):len(a)]
+                aDate = aDate[aDate.find("</div>")+1:aDate.find("style")]
+                aDate = aDate[aDate.find("<div>")+5:aDate.find("</div>")]
+                year = datetime.date.today().year
+                if (int(aDate[0:aDate.find("/")])>datetime.date.today().year):
+                    year -= 1
+                aDate1 = datetime.date(year,int(aDate[0:aDate.find("/")]),int(aDate[aDate.find("/")+1:len(aDate)]))
+                a = a[a.find("Close Window")+10:len(a)]
+                #print(aDate1)  
+
+                # Assignment Grade
+                a2 = " ".join(a2.split())
+                aGrade = a2[(a2.find(" / "))-5:(a2.find(" / "))+5]
+                while((aGrade.__contains__(">"))==0): # Found " / " marker that does not denote a grade (ex. teacher comment)
+                    a2 = a2[(a2.find(" / "))+3:len(a2)]
+                    aGrade = a2[(a2.find(" / "))-8:(a2.find(" / "))+5]
+                aPtsRec = aGrade[aGrade.find(">")+2:aGrade.find(" / ")]
+                aPtsWorth = aGrade[aGrade.find(" / ")+3:len(aGrade)]
+                try: 
+                    intPtsWorth = float(aPtsWorth)
+                    intPtsRec = float(aPtsRec)
+                except ValueError:
+                    valid = False
+                    
+                
+                # Add assignment to course assignments list
+                # ************************************************ PROBLEM PROBLEM PROBLEM ************************************************
+                # ASSIGNMENT APPEARS UNDER EVERY CLASS, NOT JUST THE ONE IT BELONGS TO
+                if (valid):
+                    courses[i].addAssignment(assignment,intPtsWorth,intPtsRec,aCategory,aDate1)
+                
+
+            # for j in range(len(courses)):
+            #     if (len(courses[j].code)>0):
+            #         print("\n\n"+courses[j].courseName)
+            #         for x in range(len(courses[j].assignments)):
+            #             print(courses[j].assignments[x].assignmentName + "\t" + str(courses[j].assignments[x].gradePercent) + "\t" + str(courses[j].assignments[x].category) + "\t" + str(courses[j].assignments[x].datetimePosted))
+            #         print("\n")
+
+            
+    for i in range(len(courses)):
+        if (len(courses[i].code)>0):
+            print("\n\n*********************************************")
             print(courses[i].courseName)
-            
-
+            for x in range(len(courses[i].assignments)):
+                print(courses[i].assignments[x].assignmentName + "\t" + str(courses[i].assignments[x].gradePercent) + "\t" + str(courses[i].assignments[x].category) + "\t" + str(courses[i].assignments[x].datetimePosted))
+        
     
 
 

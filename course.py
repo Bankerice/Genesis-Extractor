@@ -2,6 +2,8 @@ import datetime
 import assignment
 
 class Course():
+    code = ""               # course code
+    section = ""            # course section
     courseName = ""         # title of course
     teacherName = ""        # name of teacher
     period = "A"            # block period
@@ -9,7 +11,7 @@ class Course():
     categories = [0.10,0.45,0.45]
     numInEachCategory = [0,0,0]
     totalAssignedWeights = 0
-    fullSemester = True
+    fullYear = True
 
     # Array representing all assignments with corresponding dates
     assignments = list(map(assignment.Assignment,[]))
@@ -23,11 +25,11 @@ class Course():
         months.append(dailyGrades)
 
     # Course constructor
-    def __init__(self, name, teacher, period, fullSem):
+    def __init__(self, name, teacher, period, FYSEM):
         self.courseName = name
         self.teacherName = teacher
         self.period = period
-        self.fullSemester = fullSem
+        self.fullYear = FYSEM
 
     # Add an assignment to this course
     def addAssignment (self,name, ptsWorth, ptsReceived, category, date):
@@ -47,8 +49,9 @@ class Course():
         
     
 # course1 = Course("Name","Teacher","A",True)
-# course1.addAssignment("a",10,8,assignment.Category.MajorAssessment,datetime.datetime.today().date)
-# course1.addAssignment("b",10,10,assignment.Category.MajorAssessment,datetime.datetime.today().date)
+# course1.addAssignment("a",10,8,assignment.Category.MajorAssessments,datetime.datetime.today().date)
+# print(course1.assignments[0].infoString())
+# course1.addAssignment("b",10,10,assignment.Category.MajorAssessments,datetime.datetime.today().date)
 # print(course1.assignments[0].gradePercent)
 # print(course1.assignments[1].gradePercent)
 # print(course1.currentMPGrade)

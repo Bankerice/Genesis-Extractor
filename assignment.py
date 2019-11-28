@@ -2,6 +2,7 @@
 import datetime
 import enum
 
+
 # Category enum created to represent weighting of assignment
 class Category (enum.Enum):
     DistrictAssessment = 1
@@ -25,7 +26,7 @@ class Assignment:
         self.category               = info[2]
         self.datetimePosted         = info[3]
 
-        self.gradePercent = (self.numPointsReceived / self.numTotalPointsWorth) * 100
+        self.gradePercent = round(((self.numPointsReceived / self.numTotalPointsWorth) * 100),2)
 
     def infoString(self):
         info = ""
