@@ -66,88 +66,18 @@ def extractMainPage(robo):
             code = code[code.find(",")+2:code.find(")")-1]
             courses[i].code = code[0:code.find(":")]
             courses[i].section = code[code.find(":")+1:len(code)+1]
-        #print(courses[i].courseName + ":\t" + courses[i].code + ":" + courses[i].section)
 
     # Create assignment list for each course from course code
     for i in range(len(courses)):
-        # Attempt to fix assignment-assigned-to-every-course issue by clearing variables - Did not work
-        assignment = ""
-        a = ""
-        a2 = ""
-        aCategory = ""
-        aDate = ""
-        aDate1 = ""
-        year = ""
-        aGrade = ""
-        aPtsRec = ""
-        aPtsWorth = ""
-        intPtsRec = 0
-        intPtsWorth = 0
-        valid = True
 
         if (len(courses[i].code)>0): # Does not include study hall
             br.open("https://parents.chclc.org/genesis/parents?tab1=studentdata&tab2=gradebook&tab3=coursesummary&studentid=" + str(studentID) + "&mp=MP" + str(mp) +"&action=form&courseCode=" + str(courses[i].code) + "&courseSection=" + str(courses[i].section))
             a = str(br.parsed)
-            a2 = a[a.find("<b>Assignments</b>")+18:a.find("Assignments graded as")]
-            while(a2.__contains__("<b>")):
-                valid = True
-
-                # Assignment Name
-                assignment = a2[a2.find("<b>")+3:a2.find("</b>")]
-                a2 = a2[a2.find("</b>")+4:len(a2)]
-                #print(assignment)
-                
-                # Assignment Category
-                aCategory = a[a.find("Close Window")+10:len(a)]
-                aCategory = aCategory[aCategory.find("</div>")+6:aCategory.find("<td")]
-                aCategory = " ".join(aCategory.split())
-                aCategory = aCategory[0:aCategory.find("</td>")]
-                #print(aCategory)
-
-                # Assignment Date Posted
-                aDate = a[a.find("listrow"):len(a)]
-                aDate = aDate[aDate.find("</div>")+1:aDate.find("style")]
-                aDate = aDate[aDate.find("<div>")+5:aDate.find("</div>")]
-                year = datetime.date.today().year
-                if (int(aDate[0:aDate.find("/")])>datetime.date.today().year):
-                    year -= 1
-                aDate1 = datetime.date(year,int(aDate[0:aDate.find("/")]),int(aDate[aDate.find("/")+1:len(aDate)]))
-                a = a[a.find("Close Window")+10:len(a)]
-                #print(aDate1)  
-
-                # Assignment Grade
-                a2 = " ".join(a2.split())
-                aGrade = a2[(a2.find(" / "))-5:(a2.find(" / "))+5]
-                while((aGrade.__contains__(">"))==0): # Found " / " marker that does not denote a grade (ex. teacher comment)
-                    a2 = a2[(a2.find(" / "))+3:len(a2)]
-                    aGrade = a2[(a2.find(" / "))-8:(a2.find(" / "))+5]
-                aPtsRec = aGrade[aGrade.find(">")+2:aGrade.find(" / ")]
-                aPtsWorth = aGrade[aGrade.find(" / ")+3:len(aGrade)]
-                try: 
-                    intPtsWorth = float(aPtsWorth)
-                    intPtsRec = float(aPtsRec)
-                except ValueError:
-                    valid = False
-                    
-                
-                # Add assignment to course assignments list
-                # ************************************************ PROBLEM PROBLEM PROBLEM ************************************************
-                # ASSIGNMENT APPEARS UNDER EVERY CLASS, NOT JUST THE ONE IT BELONGS TO
-                if (valid):
-                    courses[i].addAssignment(assignment,intPtsWorth,intPtsRec,aCategory,aDate1)
-                
-
-            # for j in range(len(courses)):
-            #     if (len(courses[j].code)>0):
-            #         print("\n\n"+courses[j].courseName)
-            #         for x in range(len(courses[j].assignments)):
-            #             print(courses[j].assignments[x].assignmentName + "\t" + str(courses[j].assignments[x].gradePercent) + "\t" + str(courses[j].assignments[x].category) + "\t" + str(courses[j].assignments[x].datetimePosted))
-            #         print("\n")
-
+            createAssignmentList(a,i)
             
+    # Test by printing all assignments of all courses
     for i in range(len(courses)):
         if (len(courses[i].code)>0):
-            print("\n\n*********************************************")
             print(courses[i].courseName)
             for x in range(len(courses[i].assignments)):
                 print(courses[i].assignments[x].assignmentName + "\t" + str(courses[i].assignments[x].gradePercent) + "\t" + str(courses[i].assignments[x].category) + "\t" + str(courses[i].assignments[x].datetimePosted))
@@ -214,8 +144,60 @@ def createCourseList(courseSchedule):
         courseSchedule[i] = courseSchedule[i].split("\n")
         courses.append(course.Course(courseSchedule[i][1],courseSchedule[i][5],courseSchedule[i][0],True if courseSchedule[i][2]=='FY' else False))
 
-    # for i in range(len(courses)):
-    #     print(courses[i].courseName)
+def createAssignmentList(a,i):
+    # Creates a list of assignments for every course
+    
+    a2 = a[a.find("<b>Assignments</b>")+18:a.find("Assignments graded as")]
+
+    while(a2.__contains__("<b>")):
+        valid = True
+
+        # Assignment Name
+        assignment = a2[a2.find("<b>")+3:a2.find("</b>")]
+        a2 = a2[a2.find("</b>")+4:len(a2)]
+        
+        # Assignment Category
+        aCategory = a[a.find("Close Window")+10:len(a)]
+        aCategory = aCategory[aCategory.find("</div>")+6:aCategory.find("<td")]
+        aCategory = " ".join(aCategory.split())
+        aCategory = aCategory[0:aCategory.find("</td>")]
+
+        # Assignment Date Posted
+        aDate = a[a.find("listrow"):len(a)]
+        aDate = aDate[aDate.find("</div>")+1:aDate.find("style")]
+        aDate = aDate[aDate.find("<div>")+5:aDate.find("</div>")]
+        year = datetime.date.today().year
+        if (int(aDate[0:aDate.find("/")])>datetime.date.today().year):
+            year -= 1
+        aDate1 = datetime.date(year,int(aDate[0:aDate.find("/")]),int(aDate[aDate.find("/")+1:len(aDate)]))
+        a = a[a.find("Close Window")+10:len(a)]
+
+        # Assignment Grade
+        a2 = " ".join(a2.split())
+        aGrade = a2[(a2.find(" / "))-5:(a2.find(" / "))+5]
+        while((aGrade.__contains__(">"))==0): # Found " / " marker that does not denote a grade (ex. teacher comment)
+            a2 = a2[(a2.find(" / "))+3:len(a2)]
+            aGrade = a2[(a2.find(" / "))-8:(a2.find(" / "))+5]
+        aPtsRec = aGrade[aGrade.find(">")+2:aGrade.find(" / ")]
+        aPtsWorth = aGrade[aGrade.find(" / ")+3:len(aGrade)]
+        try: 
+            intPtsWorth = float(aPtsWorth)
+            intPtsRec = float(aPtsRec)
+        except ValueError:
+            valid = False
+            
+        # Add assignment to course assignments list 
+        if (valid):
+            courses[i].addAssignment(assignment,intPtsWorth,intPtsRec,aCategory,aDate1)
+            # Fix adding-assignment-to-all-courses issue
+            for j in range(len(courses)):
+                if (j!=i):
+                    temp = []
+                    for x in range(len(courses[j].assignments)):
+                        if ((str(courses[j].assignments[x].assignmentName).__contains__(assignment))==0):
+                            temp.append(courses[j].assignments[x])
+                    courses[j].assignments = temp
+    
 
 
 if __name__ == '__main__':
