@@ -41,17 +41,28 @@ class Course():
         newAssignment = assignment.Assignment(name,infoArray)
         self.assignments.append(newAssignment)
         
-        total = 0
-        for i in range(0,self.assignments.__len__()):
-            total += self.assignments[i].gradePercent
+        self.calculateCurrentMPGrade()
 
-        self.currentMPGrade = total / len(self.assignments)
+    # Calculate the current marking period grade for this course ---- Super inefficient and weighting calculations are off
+    def calculateCurrentMPGrade (self):
+        total = 0
+        totalR = [0.0,0.0,0.0]
+        totalW = [0.0,0.0,0.0]
+        weight = [0.5,0.4,0.1]
+        weights = [0.0,0.0,0.0]
         
-    
-# course1 = Course("Name","Teacher","A",True)
-# course1.addAssignment("a",10,8,assignment.Category.MajorAssessments,datetime.datetime.today().date)
-# print(course1.assignments[0].infoString())
-# course1.addAssignment("b",10,10,assignment.Category.MajorAssessments,datetime.datetime.today().date)
-# print(course1.assignments[0].gradePercent)
-# print(course1.assignments[1].gradePercent)
-# print(course1.currentMPGrade)
+        for i in range(len(self.assignments)):
+            if (self.assignments[i].gradePercent >= 0):
+                totalR[self.assignments[i].category-1] += float(self.assignments[i].numPointsReceived)
+                weights[self.assignments[i].category-1] = weight[self.assignments[i].category-1]
+                totalW[self.assignments[i].category-1] += float(self.assignments[i].numTotalPointsWorth)
+                
+            if ((self.assignments[i].numTotalPointsWorth == 0) & (self.assignments[i].numPointsReceived > 0)):
+                totalR[self.assignments[i].category-1] += float(self.assignments[i].numPointsReceived)
+        
+        for i in range(0,3):
+            if (totalW[i]>0):
+                total += weights[i] * (totalR[i]/totalW[i])
+        self.currentMPGrade = total / (weights[0]+weights[1]+weights[2])
+        
+                

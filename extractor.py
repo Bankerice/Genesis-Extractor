@@ -47,7 +47,6 @@ def extractMainPage(robo):
 
 
     #Converts the HTML of the grade page into a string
-    #br.open("document.frmHome.action='parents?tab1=studentdata&tab2=gradebook&tab3=listassignments&studentid="+studentID+"&action=form&date="+)
     br.open("https://parents.chclc.org/genesis/parents?tab1=studentdata&tab2=gradebook&tab3=weeklysummary&action=form&studentid="+studentID)
     src = str(br.parsed)
     links = br.get_links()
@@ -75,12 +74,14 @@ def extractMainPage(robo):
             a = str(br.parsed)
             createAssignmentList(a,i)
             
+            print(courses[i].courseName + " GRADE:\t" + str(courses[i].currentMPGrade)) # off by a little because of weighting
+            
     # Test by printing all assignments of all courses
-    for i in range(len(courses)):
-        if (len(courses[i].code)>0):
-            print(courses[i].courseName)
-            for x in range(len(courses[i].assignments)):
-                print(courses[i].assignments[x].assignmentName + "\t" + str(courses[i].assignments[x].gradePercent) + "\t" + str(courses[i].assignments[x].category) + "\t" + str(courses[i].assignments[x].datetimePosted))
+    # for i in range(len(courses)):
+    #     if (len(courses[i].code)>0):
+    #         print(courses[i].courseName)
+    #         for x in range(len(courses[i].assignments)):
+    #            print(courses[i].assignments[x].assignmentName + "\t" + str(courses[i].assignments[x].gradePercent) + "\t" + str(courses[i].assignments[x].category) + "\t" + str(courses[i].assignments[x].datetimePosted))
         
     
 
@@ -94,7 +95,6 @@ def extractMainPage(robo):
 
     #Removes all tabs and newlines
     src = " ".join(src.split())
-    #studentName = src[src.index("Select Student:")+16:src.index("Weekly Summary")-1]    
     
     #Cuts the string into the important parts
     notDone = True
@@ -174,12 +174,14 @@ def createAssignmentList(a,i):
 
         # Assignment Grade
         a2 = " ".join(a2.split())
-        aGrade = a2[(a2.find(" / "))-5:(a2.find(" / "))+5]
-        while((aGrade.__contains__(">"))==0): # Found " / " marker that does not denote a grade (ex. teacher comment)
-            a2 = a2[(a2.find(" / "))+3:len(a2)]
-            aGrade = a2[(a2.find(" / "))-8:(a2.find(" / "))+5]
-        aPtsRec = aGrade[aGrade.find(">")+2:aGrade.find(" / ")]
-        aPtsWorth = aGrade[aGrade.find(" / ")+3:len(aGrade)]
+        
+        aGrade = a2[a2.find("nowrap="):a2.find("nowrap=")+30]
+        aGrade = aGrade[0:aGrade.find("<")]
+        if(aGrade.__contains__("/")): # Found " / " marker indicating a grade
+            aPtsRec = aGrade[aGrade.find(">")+2:aGrade.find(" / ")]
+            aPtsWorth = aGrade[aGrade.find(" / ")+3:len(aGrade)]
+        else:
+            continue # Assignments marked as "DONE," etc.
         try: 
             intPtsWorth = float(aPtsWorth)
             intPtsRec = float(aPtsRec)

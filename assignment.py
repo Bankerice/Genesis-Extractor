@@ -4,7 +4,7 @@ import enum
 
 
 # Category enum created to represent weighting of assignment
-class Category (enum.Enum):
+class Category (enum.IntEnum):
     DistrictAssessment = 1
     MajorAssessments = 2
     MinorAssessments = 3
@@ -15,6 +15,7 @@ class Assignment:
     numTotalPointsWorth = 0.0
     numPointsReceived = 0.0
     gradePercent = 0.0
+    extraCredit = False
     category = Category.MajorAssessments
     datetimePosted = datetime.datetime.today().date
 
@@ -23,10 +24,19 @@ class Assignment:
         self.assignmentName         = name
         self.numTotalPointsWorth    = info[0]
         self.numPointsReceived      = info[1]
-        self.category               = info[2]
         self.datetimePosted         = info[3]
 
-        self.gradePercent = round(((self.numPointsReceived / self.numTotalPointsWorth) * 100),2)
+        # Make self.category type Category
+        for i in range(1,4):
+            if(str(Category(i)).__contains__(info[2])):
+                self.category = Category(i)
+
+        try:
+            self.gradePercent = round(((self.numPointsReceived / self.numTotalPointsWorth) * 100),2)
+        except ZeroDivisionError:
+            self.gradePercent = -1
+            extraCredit = True
+        
 
     def infoString(self):
         info = ""
