@@ -53,16 +53,21 @@ class Course():
         
         for i in range(len(self.assignments)):
             if (self.assignments[i].gradePercent >= 0):
-                totalR[self.assignments[i].category-1] += float(self.assignments[i].numPointsReceived)
-                weights[self.assignments[i].category-1] = weight[self.assignments[i].category-1]
-                totalW[self.assignments[i].category-1] += float(self.assignments[i].numTotalPointsWorth)
+                totalR[self.assignments[i].category.value-1] += float(self.assignments[i].numPointsReceived)
+                weights[self.assignments[i].category.value-1] = weight[self.assignments[i].category.value-1]
+                totalW[self.assignments[i].category.value-1] += float(self.assignments[i].numTotalPointsWorth)
                 
             if ((self.assignments[i].numTotalPointsWorth == 0) & (self.assignments[i].numPointsReceived > 0)):
-                totalR[self.assignments[i].category-1] += float(self.assignments[i].numPointsReceived)
+                totalR[self.assignments[i].category.value-1] += float(self.assignments[i].numPointsReceived)
         
         for i in range(0,3):
             if (totalW[i]>0):
                 total += weights[i] * (totalR[i]/totalW[i])
-        self.currentMPGrade = total / (weights[0]+weights[1]+weights[2])
+        
+        weightSum = weights[0]+weights[1]+weights[2]
+        if (weightSum==0):
+            self.currentMPGrade = 0
+        else:
+            self.currentMPGrade = total / (weights[0]+weights[1]+weights[2])
         
                 

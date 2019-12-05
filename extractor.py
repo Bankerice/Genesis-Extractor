@@ -1,5 +1,6 @@
 import course
 import assignment
+import userActions
 import datetime
 import re
 import string
@@ -74,7 +75,8 @@ def extractMainPage(robo):
             a = str(br.parsed)
             createAssignmentList(a,i)
             
-            print(courses[i].courseName + " GRADE:\t" + str(courses[i].currentMPGrade)) # off by a little because of weighting
+            #print(courses[i].courseName + " GRADE:\t" + str(courses[i].currentMPGrade)) # off by a little because of weighting
+            
             
     # Test by printing all assignments of all courses
     # for i in range(len(courses)):
@@ -83,7 +85,23 @@ def extractMainPage(robo):
     #         for x in range(len(courses[i].assignments)):
     #            print(courses[i].assignments[x].assignmentName + "\t" + str(courses[i].assignments[x].gradePercent) + "\t" + str(courses[i].assignments[x].category) + "\t" + str(courses[i].assignments[x].datetimePosted))
         
+
+
+
     
+    # ------------------------------------------- TEST USER ACTIONS -------------------------------------------
+    interface = userActions.UserActions(studentName,studentID,courses)
+    #print(interface.getCourseGradeOnDay(5,13,11,2019))
+    
+    arr = interface.getDailyCourseGrades(5,4,11,2019,20,11,2019)
+    if (arr!=0):
+        for i in range(1,len(arr)):
+            a = arr[i]
+            print(str(a[0])+":\t"+str(a[1]))
+    
+
+
+
 
 
     #Removes initial Javascript
