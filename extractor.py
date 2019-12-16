@@ -22,7 +22,7 @@ mp = 2
 # Body
 def main():
 
-    initUserData();
+    initUserData()
 
     br = RoboBrowser(parser='html.parser')
 

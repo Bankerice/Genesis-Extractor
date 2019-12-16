@@ -30,7 +30,7 @@ class UserActions():
         for x in range(len(self.courses[i].assignments)):
             d = self.courses[i].assignments[x].datetimePosted
             #print(str(d.month)+"\t"+str(d.day) + "\t" + str(d.year))
-            if ((d.year<year) | ((d.year == year) & ((d.month < month) | ((d.month == month) & (d.day < day))))):
+            if ((d.year<year) | ((d.year == year) & ((d.month < month) | ((d.month == month) & (d.day <= day))))):
                 tempAssign.append(self.courses[i].assignments[x])
                     
         # Get course grade as of the entered date
