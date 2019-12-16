@@ -4,7 +4,7 @@ import userActions
 import datetime
 import re
 import string
-
+import os
 
 from robobrowser import RoboBrowser
 from bs4 import BeautifulSoup
@@ -14,30 +14,50 @@ re._pattern_type = re.Pattern
 # Global variables
 studentName = ""
 studentID = ""
+password = ""
 courses = list(map(course.Course,[]))
 periods = ['A','B','C','D','E','F','G','H']
 mp = 2
 
 # Body
 def main():
+
+    initUserData();
+
     br = RoboBrowser(parser='html.parser')
 
     mainpageGrades = extractMainPage(br)
+
+
+def initUserData():
+    if not os.path.exists("config.ini"):  
+        file = open("config.ini","w")
+
+        file.write(input("Student ID: ")+"\n")
+        file.write(input("Password: ")+"\n")
+
+        file.close()
+
+
 
 
 def extractMainPage(robo):
     br = robo
     br.open("https://parents.chclc.org/genesis/sis/view?gohome=true")
     form = br.get_form()
-    studentID = ""
-    form["j_username"] = studentID + "@chclc.org"
-    form["j_password"] = ""
+
+    file = open("config.ini","r")
+    text = []
+    text = file.readlines()
+    studentID = text[0].strip("\n")
+    password = text[1].strip("\n")
+    form["j_username"] =  studentID+ "@chclc.org"
+    form["j_password"] = password
     br.submit_form(form)
-  
+
     #Converts the HTML of the Summary page into a string and uses it to create courses list of Course objects
     br.open("https://parents.chclc.org/genesis/parents?tab1=studentdata&tab2=studentsummary&action=form&studentid="+studentID)
     src = str(br.parsed())
-    studentID = src[src.find("Student ID")+34:src.find("Student ID")+41]
     
     courseSchedule = src[src.find('Teacher'):len(src)]
     courseSchedule = courseSchedule[courseSchedule.find('>A<')+1:courseSchedule.find('listheading')]
@@ -74,19 +94,6 @@ def extractMainPage(robo):
             br.open("https://parents.chclc.org/genesis/parents?tab1=studentdata&tab2=gradebook&tab3=coursesummary&studentid=" + str(studentID) + "&mp=MP" + str(mp) +"&action=form&courseCode=" + str(courses[i].code) + "&courseSection=" + str(courses[i].section))
             a = str(br.parsed)
             createAssignmentList(a,i)
-            
-            #print(courses[i].courseName + " GRADE:\t" + str(courses[i].currentMPGrade)) # off by a little because of weighting
-            
-            
-    # Test by printing all assignments of all courses
-    # for i in range(len(courses)):
-    #     if (len(courses[i].code)>0):
-    #         print(courses[i].courseName)
-    #         for x in range(len(courses[i].assignments)):
-    #            print(courses[i].assignments[x].assignmentName + "\t" + str(courses[i].assignments[x].gradePercent) + "\t" + str(courses[i].assignments[x].category) + "\t" + str(courses[i].assignments[x].datetimePosted))
-        
-
-
 
     
     # ------------------------------------------- TEST USER ACTIONS -------------------------------------------
@@ -99,7 +106,7 @@ def extractMainPage(robo):
             a = arr[i]
             print(str(a[0])+":\t"+str(a[1]))
     
-
+    
 
 
 
