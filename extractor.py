@@ -18,16 +18,18 @@ password = ""
 courses = list(map(course.Course,[]))
 periods = ['A','B','C','D','E','F','G','H']
 mp = 2
+mpStartDates = [[1,9,2019],[2,11,2019],[25,1,2020],[4,4,2020]]
 
 # Body
 def main():
-
     initUserData()
-
     br = RoboBrowser(parser='html.parser')
-
     mainpageGrades = extractMainPage(br)
+    userAct()
 
+def restart():
+    br = RoboBrowser(parser='html.parser')
+    mainpageGrades = extractMainPage(br)
 
 def initUserData():
     if not os.path.exists("config.ini"):  
@@ -37,8 +39,6 @@ def initUserData():
         file.write(input("Password: ")+"\n")
 
         file.close()
-
-
 
 
 def extractMainPage(robo):
@@ -64,7 +64,6 @@ def extractMainPage(robo):
     soup = BeautifulSoup(courseSchedule,"lxml")
     courseSchedule = ''.join(soup.findAll(text=True))
     createCourseList(courseSchedule)
-
 
 
     #Converts the HTML of the grade page into a string
@@ -94,22 +93,6 @@ def extractMainPage(robo):
             br.open("https://parents.chclc.org/genesis/parents?tab1=studentdata&tab2=gradebook&tab3=coursesummary&studentid=" + str(studentID) + "&mp=MP" + str(mp) +"&action=form&courseCode=" + str(courses[i].code) + "&courseSection=" + str(courses[i].section))
             a = str(br.parsed)
             createAssignmentList(a,i)
-
-    
-    # ------------------------------------------- TEST USER ACTIONS -------------------------------------------
-    interface = userActions.UserActions(studentName,studentID,courses)
-    #print(interface.getCourseGradeOnDay(5,13,11,2019))
-    
-    arr = interface.getDailyCourseGrades(5,4,11,2019,20,11,2019)
-    if (arr!=0):
-        for i in range(1,len(arr)):
-            a = arr[i]
-            print(str(a[0])+":\t"+str(a[1]))
-    
-    
-
-
-
 
     #Removes initial Javascript
     src = src[src.find('<!-- Start of Header-->')+len('<!-- Start of Header-->'): len(src)]
@@ -225,7 +208,104 @@ def createAssignmentList(a,i):
                             temp.append(courses[j].assignments[x])
                     courses[j].assignments = temp
     
+def getCourseList():
+    return courses
 
+def userAct():
+    # ------------------------------------------- TEST USER ACTIONS -------------------------------------------
+    val = False
+    # while (val==0):
+    #     ans = input("Choose MP: ")
+    #     try:
+    #         mpAns = int(ans)
+    #         val = True
+    #     except ValueError:
+    #         val = False
+    mpAns = 1
+    interface = userActions.UserActions(studentName,studentID,mpAns)
+    
+    val = False
+    while (val==0):
+        ans = input("Choose Course as number from 0 to " + str(len(courses)-1) + ": ")
+        try:
+            courseAns = int(ans)
+            val = True
+        except ValueError:
+            val = False
+
+    courseNum = courseAns
+    mpStartDates = [[1,9,2019],[2,11,2019],[25,1,2020],[4,4,2020]] # marking period start dates
+
+    # MP 1 (manually - no loop)
+    d1 = mpStartDates[0][0]
+    m1 = mpStartDates[0][1]
+    y1 = mpStartDates[0][2]
+
+    d2 = mpStartDates[1][0] - 1
+    m2 = mpStartDates[1][1]
+    y2 = mpStartDates[1][2]
+
+    interface.setMP(1)
+    arr = interface.getDailyCourseGrades(courseNum,d1,m1,y1,d2,m2,y2)
+
+    # MP 2 (manually - no loop)
+    d1 = mpStartDates[1][0]
+    m1 = mpStartDates[1][1]
+    y1 = mpStartDates[1][2]
+
+    d2 = datetime.datetime.today().day #mpStartDates[2][0] - 1
+    m2 = datetime.datetime.today().month #mpStartDates[2][1]
+    y2 = datetime.datetime.today().year #mpStartDates[2][2]
+
+    interface.setMP(2)
+    arr2 = interface.getDailyCourseGrades(courseNum,d1,m1,y1,d2,m2,y2)
+    
+    arrTotal = [[]]
+    for a in range(len(arr)):
+        arrTotal.append(arr[a])
+            
+    for a in range(len(arr2)):
+        arrTotal.append(arr2[a])
+    
+    # print(arrTotal)
+    
+    for a in range(len(arrTotal)):
+        try:
+            print(str(arrTotal[a][0]) + "\t" + str(arrTotal[a][1]))
+        except IndexError:
+            print(str(a) + "\t" + str(len(arrTotal)))
+    
+    # Output data as a text file
+
+    # for a in range (len(courses)):
+    #     courseNum = a
+    #     # if (len(courses[a].code)>0):
+    #     for x in range (0,1): #(0,4): # Goes through every marking period 
+    #         arr = [[]] # [day count][date,grade]
+
+    #         d1 = mpStartDates[x][0]
+    #         m1 = mpStartDates[x][1]
+    #         y1 = mpStartDates[x][2]
+
+    #         if (x<4):
+    #             d2 = datetime.datetime.today().day #mpStartDates[x+1][0] - 1
+    #             m2 = datetime.datetime.today().month #mpStartDates[x+1][1]
+    #             y2 = 2019 #mpStartDates[x+1][2]
+    #         else:
+    #             d2 = 17
+    #             m2 = 6
+    #             y2 = 2020
+            
+    #         interface.setMP(x+1)
+    #         arr = interface.getDailyCourseGrades(courseNum,d1,m1,y1,d2,m2,y2)
+    #         interface.outputData(courseNum, arr, (x==0))
+
+        
+    #         # if (arr!=0):
+    #         #     for i in range(1,len(arr)):
+    #         #         a = arr[i]
+    #         #         print(str(a[0])+":\t"+str(a[1]))
+        
 
 if __name__ == '__main__':
     main()

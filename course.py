@@ -46,8 +46,8 @@ class Course():
     # Calculate the current marking period grade for this course ---- Super inefficient and weighting calculations are off
     def calculateCurrentMPGrade (self):
         total = 0
-        totalR = [0.0,0.0,0.0]
-        totalW = [0.0,0.0,0.0]
+        totalR = [0.0,0.0,0.0] # total points received per category
+        totalW = [0.0,0.0,0.0] 
         weight = [0.5,0.4,0.1]
         weights = [0.0,0.0,0.0]
         
