@@ -22,7 +22,6 @@ mpStartDates = [[1,9,2019],[2,11,2019],[25,1,2020],[4,4,2020]]
 
 # Body
 def main():
-    initUserData()
     br = RoboBrowser(parser='html.parser')
     mainpageGrades = extractMainPage(br)
     userAct()
@@ -44,17 +43,27 @@ def initUserData():
 def extractMainPage(robo):
     br = robo
     br.open("https://parents.chclc.org/genesis/sis/view?gohome=true")
-    form = br.get_form()
 
-    file = open("config.ini","r")
-    text = []
-    text = file.readlines()
-    studentID = text[0].strip("\n")
-    password = text[1].strip("\n")
-    form["j_username"] =  studentID+ "@chclc.org"
-    form["j_password"] = password
-    br.submit_form(form)
 
+    while br.url == "https://parents.chclc.org/genesis/sis/view?gohome=true":
+        initUserData()
+
+
+        form = br.get_form()
+
+        file = open("config.ini","r")
+        text = file.readlines()
+        studentID = text[0].strip("\n")
+        password = text[1].strip("\n")
+        form["j_username"] =  studentID+ "@chclc.org"
+        form["j_password"] = password
+        br.submit_form(form)
+        file.close()
+
+        if(br.url == "https://parents.chclc.org/genesis/sis/view?gohome=true"):
+            initUserData()
+            os.remove("config.ini")
+            
     #Converts the HTML of the Summary page into a string and uses it to create courses list of Course objects
     br.open("https://parents.chclc.org/genesis/parents?tab1=studentdata&tab2=studentsummary&action=form&studentid="+studentID)
     src = str(br.parsed())
