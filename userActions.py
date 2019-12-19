@@ -29,7 +29,6 @@ class UserActions():
         self.mp = tempMP
         extractor.mp = mp
         
-        extractor.restart()
         
         # Get courses data
         courseList = extractor.getCourseList()
@@ -106,27 +105,27 @@ class UserActions():
     def setMP(self, mp):
         extractor.mp = mp
         
-    def outputData(self, i, arr, first): # Output course data as a text file
-        try:
-            # Create new file for output
-            outFile = open("dataOutput2.txt","x")
-        except FileExistsError:
-            # Edit existing file
-            outFile = open("dataOutput2.txt","a")
+    # def outputData(self, i, arr, first): # Output course data as a text file
+    #     try:
+    #         # Create new file for output
+    #         outFile = open("dataOutput2.txt","x")
+    #     except FileExistsError:
+    #         # Edit existing file
+    #         outFile = open("dataOutput2.txt","a")
         
-        # Print data to file
-        # for i in range(len(self.courses)):
+    #     # Print data to file
+    #     # for i in range(len(self.courses)):
 
-        if (first):
-            # Print general course information
-            outFile.write("Period "+str(self.courses[i].period)+": "+str(self.courses[i].courseName)+"\n")
-            outFile.write(str(self.courses[i].teacherName)+"\n")
+    #     if (first):
+    #         # Print general course information
+    #         outFile.write("Period "+str(self.courses[i].period)+": "+str(self.courses[i].courseName)+"\n")
+    #         outFile.write(str(self.courses[i].teacherName)+"\n")
         
-        # Print date-grade array
-        #arr = self.getDailyCourseGrades(i,self.d1,self.m1,self.y1,self.d2,self.m2,self.y2)
-        for a in range(len(arr)):
-            outFile.write(str(arr[a][0]) + "\t\t" + str(arr[a][1]) + "\n")
+    #     # Print date-grade array
+    #     #arr = self.getDailyCourseGrades(i,self.d1,self.m1,self.y1,self.d2,self.m2,self.y2)
+    #     for a in range(len(arr)):
+    #         outFile.write(str(arr[a][0]) + "\t\t" + str(arr[a][1]) + "\n")
         
-        outFile.close()
+    #     outFile.close()
         
     
