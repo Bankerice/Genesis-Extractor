@@ -29,7 +29,7 @@ class UserActions():
         self.mp = tempMP
         extractor.mp = mp
         
-        
+        extractor.restart()
         # Get courses data
         courseList = extractor.getCourseList()
 
