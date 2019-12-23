@@ -27,6 +27,9 @@ def main():
     userAct()
 
 def restart():
+    # Clear arrays
+    courses = list(map(course.Course,[]))
+
     br = RoboBrowser(parser='html.parser')
     mainpageGrades = extractMainPage(br)
 
@@ -55,7 +58,7 @@ def extractMainPage(robo):
         text = file.readlines()
         studentID = text[0].strip("\n")
         password = text[1].strip("\n")
-        form["j_username"] =  studentID+ "@chclc.org"
+        form["j_username"] = studentID+ "@chclc.org"
         form["j_password"] = password
         br.submit_form(form)
         file.close()
@@ -221,6 +224,27 @@ def getCourseList():
     return courses
 
 def userAct():
+    # interface = userActions.UserActions(studentName,studentID,1)
+    # for i in interface.getDailyCourseGrades(5,1,9,2019,1,11,2019):
+    #     print(str(i[0])+"\t"+str(i[1]))
+    mp = 2
+    # restart()
+    interface2 = userActions.UserActions(studentName,studentID,2)
+    # interface.setMP(2)
+    for i in interface2.getDailyCourseGrades(5,2,11,2019,20,12,2019):
+        print(str(i[0])+"\t"+str(i[1]))
+        
+    mp = 1
+    # restart()
+    interface = userActions.UserActions(studentName,studentID,1)
+    # interface.setMP(1)
+    for i in interface.getDailyCourseGrades(5,1,9,2019,1,11,2019):
+        print(str(i[0])+"\t"+str(i[1]))
+    
+
+    # print(interface.getCourseGradeOnDay(5,20,12,2019,2))
+
+def userAct2():
     # ------------------------------------------- TEST USER ACTIONS -------------------------------------------
     val = False
     # while (val==0):
@@ -230,19 +254,25 @@ def userAct():
     #         val = True
     #     except ValueError:
     #         val = False
-    mpAns = 1
+    mpAns = 2
+    mp = 2
     interface = userActions.UserActions(studentName,studentID,mpAns)
+    # print(interface.getCourseGradeOnDay(5,20,12,2019,2))
     
-    val = False
-    while (val==0):
-        ans = input("Choose Course as number from 0 to " + str(len(courses)-1) + ": ")
-        try:
-            courseAns = int(ans)
-            val = True
-        except ValueError:
-            val = False
+    # val = False
+    # while (val==0):
+    #     ans = input("Choose Course as number from 0 to " + str(len(courses)-1) + ": ")
+    #     try:
+    #         courseAns = int(ans)
+    #         val = True
+    #     except ValueError:
+    #         val = False
 
+    courseAns = 5
     courseNum = courseAns
+    print(courses[courseAns].courseName)
+    # for i in range(len(courses[courseAns].assignments)):
+        # print(courses[courseAns].assignments[i].assignmentName)
     mpStartDates = [[1,9,2019],[2,11,2019],[25,1,2020],[4,4,2020]] # marking period start dates
 
     # MP 1 (manually - no loop)
@@ -254,9 +284,19 @@ def userAct():
     m2 = mpStartDates[1][1]
     y2 = mpStartDates[1][2]
 
-    interface.setMP(1)
-    arr = interface.getDailyCourseGrades(courseNum,d1,m1,y1,d2,m2,y2)
+    # interface.setMP(1)
+    # mp = 1
+    # print(mp)
+    # arr = interface.getDailyCourseGrades(courseNum,d1,m1,y1,d2,m2,y2)
+    # arrTotal = [[]]
 
+    # for a in range(len(arr)):
+    #     arrTotal.append(arr[a])
+    #     try:
+    #         print(str(arr[a][0])+ "\t" + str(arr[a][1]))
+    #     except IndexError:
+    #         print(str(a) + "\t" + str(len(arr)))
+            
     # MP 2 (manually - no loop)
     d1 = mpStartDates[1][0]
     m1 = mpStartDates[1][1]
@@ -266,23 +306,30 @@ def userAct():
     m2 = datetime.datetime.today().month #mpStartDates[2][1]
     y2 = datetime.datetime.today().year #mpStartDates[2][2]
 
-    interface.setMP(2)
+    mp = 2
+    interface = userActions.UserActions(studentName,studentID,2)
+    # mp = 2
+    # restart()
+    print(mp)
     arr2 = interface.getDailyCourseGrades(courseNum,d1,m1,y1,d2,m2,y2)
     
-    arrTotal = [[]]
-    for a in range(len(arr)):
-        arrTotal.append(arr[a])
+    
             
     for a in range(len(arr2)):
-        arrTotal.append(arr2[a])
+        # arrTotal.append(arr2[a])
+        try:
+            print(str(arr2[a][0])+ "\t" + str(arr2[a][1]))
+        except IndexError:
+            print(str(a) + "\t" + str(len(arr2)))
     
     # print(arrTotal)
     
-    for a in range(len(arrTotal)):
-        try:
-            print(str(arrTotal[a][0]) + "\t" + str(arrTotal[a][1]))
-        except IndexError:
-            print(str(a) + "\t" + str(len(arrTotal)))
+    # for a in range(len(arrTotal)):
+    #     try:
+    #         print(str(arrTotal[a][0]) + "\t" + str(arrTotal[a][1]))
+    #     except IndexError:
+    #         print(str(a) + "\t" + str(len(arrTotal)))
+    
     
     # Output data as a text file
 

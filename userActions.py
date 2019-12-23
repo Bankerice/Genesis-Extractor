@@ -3,6 +3,7 @@ import datetime
 import extractor
 import course
 import assignment
+import date
 
 class UserActions():
     mp = 1
@@ -18,53 +19,60 @@ class UserActions():
         self.studentID = ID
 
         # Set MP
-        tempMP = self.mp
-        # # val = False
-        # # while (val==0):
-        # #     try:
-        # tempMP = int(input("Choose MP: "))
-        # val = True
-        #     # except ValueError:
-        #     #     val = False
-        self.mp = tempMP
+        self.mp = mp
+        self.courses = []
         extractor.mp = mp
-        
+        extractor.courses = []
         extractor.restart()
+
+        print(self.mp)
+        self.courses = []
+        self.getData()
+
+    def getData(self):
         # Get courses data
         courseList = extractor.getCourseList()
 
         for i in range(len(courseList)):
             self.courses.append(courseList[i])
 
-
     # Returns the overall course grade as of a date entered by the user
     def getCourseGradeOnDay(self,i,day,month,year,mp):
         # Store complete (original) list of assignments
         originalAssign = [] 
-        for x in range(len(self.courses[i].assignments)):
-            originalAssign.append(self.courses[i].assignments[x])
-
+        for x in range(len(extractor.courses[i].assignments)):
+            # print(self.courses[i].assignments[x].assignmentName)
+            originalAssign.append(extractor.courses[i].assignments[x])
+        
         # Consider only assignments in that marking period
         d1 = extractor.mpStartDates[mp][0]
         m1 = extractor.mpStartDates[mp][1]
         y1 = extractor.mpStartDates[mp][2]
+        mpStartDate = date.Date(d1,m1,y1)
 
         # Create array of only assignments posted before inputted date
         tempAssign = []
+        
         for x in range(len(self.courses[i].assignments)):
             d = self.courses[i].assignments[x].datetimePosted
+            d = date.Date(d.day,d.month,d.year)
             #print(str(d.month)+"\t"+str(d.day) + "\t" + str(d.year))
-            # if ((d.year<y1) | ((d.year == y1) & ((d.month < m1) | ((d.month == m1) & (d.day <= d1))))): # only during that MP
-            if ((d.year<year) | ((d.year == year) & ((d.month < month) | ((d.month == month) & (d.day <= day))))): # before/on inputted date
+            # print(str(d.toString()) + "\t" + str(mpStartDate.toString()))
+            if ((d.date.year<year) | ((d.date.year == year) & ((d.date.month < month) | ((d.date.month == month) & (d.date.day <= day))))): # before/on inputted date
+                # if ((d.date.year>y1) | ((d.date.year == y1) & ((d.date.month > m1) | ((d.date.month == m1) & (d.date.day <= d1))))): # before/on inputted date
+            # If MP start date is before or the same as assignment date posted
+            # if (mpStartDate.compareToDateObj(d)<=0):
                 tempAssign.append(self.courses[i].assignments[x])
+            # print(self.courses[i].assignments[x].assignmentName)
+                # print(self.courses[i].assignments[x])
                     
         # Get course grade as of the entered date
-        self.courses[i].assignments = tempAssign
-        self.courses[i].calculateCurrentMPGrade()
-        grade = self.courses[i].currentMPGrade
+        extractor.courses[i].assignments = tempAssign
+        extractor.courses[i].calculateCurrentMPGrade()
+        grade = extractor.courses[i].currentMPGrade
 
         # Restore course assignments list to original 
-        self.courses[i].assignments = originalAssign
+        extractor.courses[i].assignments = originalAssign
         return grade
             
     
@@ -87,7 +95,7 @@ class UserActions():
         else:
             print("Second endpoint date must take place after the first")
             return 0
-
+        
 
         for x in range(0,intervalLength+1):
             date = date1.__add__(datetime.timedelta(x))
@@ -103,8 +111,10 @@ class UserActions():
         return arr
             
     def setMP(self, mp):
+        self.mp = mp
         extractor.mp = mp
-        
+        extractor.restart()
+        self.getData()
     # def outputData(self, i, arr, first): # Output course data as a text file
     #     try:
     #         # Create new file for output

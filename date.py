@@ -54,25 +54,28 @@ class Date():
         # First date is earlier
         if (y1<y2 or (y1==y2 and (m1<m2 or (m1==m2 and d1<d2)))):
             ret = -1
-            print(str(d1)+" "+str(m1)+" "+str(y1)+" is before "+str(d2)+" "+str(m2)+" "+str(y2))
+            # print(str(d1)+" "+str(m1)+" "+str(y1)+" is before "+str(d2)+" "+str(m2)+" "+str(y2))
 
         # Same date
         elif (y1==y2 and m1==m2 and d1==d2):
             ret = 0
-            print(str(d1)+" "+str(m1)+" "+str(y1)+" is the same date as "+str(d2)+" "+str(m2)+" "+str(y2))
+            # print(str(d1)+" "+str(m1)+" "+str(y1)+" is the same date as "+str(d2)+" "+str(m2)+" "+str(y2))
 
         # First date is later
         elif (y2<y1 or (y2==y1 and (m2<m1 or (m2==m1 and d2<d1)))):
             ret = 1
-            print(str(d1)+" "+str(m1)+" "+str(y1)+" is after "+str(d2)+" "+str(m2)+" "+str(y2))
+            # print(str(d1)+" "+str(m1)+" "+str(y1)+" is after "+str(d2)+" "+str(m2)+" "+str(y2))
         
         return ret
+    
+    def toString(self) -> str:
+        ret = str(self.date.year)+" "+str(self.date.month)+" "+str(self.date.day)
 
 
 # Testing
-date1 = Date(13,11,2019)
-date2 = Date(2,11,2019)
-date3 = datetime.date(2019,11,14)
-print(date1.compareToDateObj(date2))
-print(date1.compareToDatetimeDate(date3))
-print(Date.compareTwoDates(13,11,2019,13,11,2019))
+# date1 = Date(13,11,2019)
+# date2 = Date(2,11,2019)
+# date3 = datetime.date(2019,11,14)
+# print(date1.compareToDateObj(date2))
+# print(date1.compareToDatetimeDate(date3))
+# print(Date.compareTwoDates(13,11,2019,13,11,2019))

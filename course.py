@@ -11,6 +11,7 @@ class Course():
     categories = [0.10,0.45,0.45]
     numInEachCategory = [0,0,0]
     totalAssignedWeights = 0
+    totalPointsWorth = 0
     fullYear = True
 
     # Array representing all assignments with corresponding dates
@@ -51,8 +52,10 @@ class Course():
         weight = [0.5,0.4,0.1]
         weights = [0.0,0.0,0.0]
         
+        self.totalPointsWorth = 0
         for i in range(len(self.assignments)):
             if (self.assignments[i].gradePercent >= 0):
+                self.totalPointsWorth += self.assignments[i].numTotalPointsWorth
                 totalR[self.assignments[i].category.value-1] += float(self.assignments[i].numPointsReceived)
                 weights[self.assignments[i].category.value-1] = weight[self.assignments[i].category.value-1]
                 totalW[self.assignments[i].category.value-1] += float(self.assignments[i].numTotalPointsWorth)
