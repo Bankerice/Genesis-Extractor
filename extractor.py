@@ -2,6 +2,7 @@ import course
 import assignment
 import userActions
 import datetime
+import date
 import re
 import string
 import os
@@ -26,9 +27,10 @@ def main():
     mainpageGrades = extractMainPage(br)
     userAct()
 
-def restart():
+def restart(newMP):
     # Clear arrays
-    courses = list(map(course.Course,[]))
+    # courses = []
+    # mp = newMP
 
     br = RoboBrowser(parser='html.parser')
     mainpageGrades = extractMainPage(br)
@@ -51,7 +53,6 @@ def extractMainPage(robo):
     while br.url == "https://parents.chclc.org/genesis/sis/view?gohome=true":
         initUserData()
 
-
         form = br.get_form()
 
         file = open("config.ini","r")
@@ -70,12 +71,12 @@ def extractMainPage(robo):
     #Converts the HTML of the Summary page into a string and uses it to create courses list of Course objects
     br.open("https://parents.chclc.org/genesis/parents?tab1=studentdata&tab2=studentsummary&action=form&studentid="+studentID)
     src = str(br.parsed())
-    
     courseSchedule = src[src.find('Teacher'):len(src)]
     courseSchedule = courseSchedule[courseSchedule.find('>A<')+1:courseSchedule.find('listheading')]
     soup = BeautifulSoup(courseSchedule,"lxml")
     courseSchedule = ''.join(soup.findAll(text=True))
     createCourseList(courseSchedule)
+    
 
 
     #Converts the HTML of the grade page into a string
@@ -100,11 +101,11 @@ def extractMainPage(robo):
 
     # Create assignment list for each course from course code
     for i in range(len(courses)):
-
         if (len(courses[i].code)>0): # Does not include study hall
             br.open("https://parents.chclc.org/genesis/parents?tab1=studentdata&tab2=gradebook&tab3=coursesummary&studentid=" + str(studentID) + "&mp=MP" + str(mp) +"&action=form&courseCode=" + str(courses[i].code) + "&courseSection=" + str(courses[i].section))
             a = str(br.parsed)
             createAssignmentList(a,i)
+    
 
     #Removes initial Javascript
     src = src[src.find('<!-- Start of Header-->')+len('<!-- Start of Header-->'): len(src)]
@@ -163,6 +164,7 @@ def createCourseList(courseSchedule):
             courseSchedule[i] = courseSchedule[i][1:len(courseSchedule[i])]
         courseSchedule[i] = courseSchedule[i].split("\n")
         courses.append(course.Course(courseSchedule[i][1],courseSchedule[i][5],courseSchedule[i][0],True if courseSchedule[i][2]=='FY' else False))
+        courses[i].assignments = []
 
 def createAssignmentList(a,i):
     # Creates a list of assignments for every course
@@ -219,30 +221,95 @@ def createAssignmentList(a,i):
                         if ((str(courses[j].assignments[x].assignmentName).__contains__(assignment))==0):
                             temp.append(courses[j].assignments[x])
                     courses[j].assignments = temp
+            
     
 def getCourseList():
-    return courses
+    courseList = []
+    for i in range(len(courses)):
+        courseList.append(courses[i])
+    return courseList
 
 def userAct():
-    # interface = userActions.UserActions(studentName,studentID,1)
-    # for i in interface.getDailyCourseGrades(5,1,9,2019,1,11,2019):
-    #     print(str(i[0])+"\t"+str(i[1]))
-    mp = 2
-    # restart()
-    interface2 = userActions.UserActions(studentName,studentID,2)
-    # interface.setMP(2)
-    for i in interface2.getDailyCourseGrades(5,2,11,2019,20,12,2019):
-        print(str(i[0])+"\t"+str(i[1]))
+    # Get current MP based on current date
+    currentMP = 2
+    currentDate = datetime.datetime.today()
+    currentDateObj = date.Date(currentDate.day,currentDate.month,currentDate.year)
+    for i in range(0,4):
+        mpStartDate = date.Date(mpStartDates[i][0],mpStartDates[i][1],mpStartDates[i][2])
+        if(currentDateObj.compareToDateObj(mpStartDate)<0):
+            currentMP = i-1
+    
+    interface = userActions.UserActions(studentName,studentID,2)
+
+
+
+    allData = [[[[]]]] # [course][[[date,grade,ptsRec,ptsW],...] for mp1, [[date,grade,ptsRec,ptsW],...] for mp2, ...]
+    interfaces = []
+    for c in range(0,len(courses)):
+        print(courses[c].courseName)
+        courseDataAllMPs = [[[]]]
+        for x in range(1,currentMP+1):
+            m = x
+            mp = m
+            interfaces.append(userActions.UserActions(studentName,studentID,m))
+            endDates = []
+            mpEndDate = date.Date(mpStartDates[m][0]-1,mpStartDates[m][1],mpStartDates[m][2])
+            if (mpEndDate.compareToDateObj(currentDateObj)>0):
+                mpEndDate = currentDateObj
+            dailyGrades = interfaces[len(interfaces)-1].getDailyCourseGrades(c,mpStartDates[m-1][0],mpStartDates[m-1][1],mpStartDates[m-1][2],mpEndDate.date.day,mpEndDate.date.month,mpEndDate.date.year)
         
-    mp = 1
+            courseDataAllMPs.append(dailyGrades)
+            for i in dailyGrades:
+                print(str(i[0])+"\t"+str(i[1])+"\t"+str(i[2])+"\t"+str(i[3]))
+
+def getDataForCourse(c,mp):
+    m = mp
+    currentDate = datetime.datetime.today()
+    currentDateObj = date.Date(currentDate.day,currentDate.month,currentDate.year)
+    courseDataAllMPs = [[[]]]
+    interface = userActions.UserActions(studentName,studentID,m)
+    endDates = []
+    mpEndDate = date.Date(mpStartDates[m][0]-1,mpStartDates[m][1],mpStartDates[m][2])
+    if (mpEndDate.compareToDateObj(currentDateObj)>0):
+        mpEndDate = currentDateObj
+    dailyGrades = interface.getDailyCourseGrades(c,mpStartDates[m-1][0],mpStartDates[m-1][1],mpStartDates[m-1][2],mpEndDate.date.day,mpEndDate.date.month,mpEndDate.date.year)
+    courseDataAllMPs.append(dailyGrades)
+    for i in dailyGrades:
+        print(str(i[0])+"\t"+str(i[1])+"\t"+str(i[2])+"\t"+str(i[3]))
+    interface.clear()
+    
+    #     courseDataAllMPs.pop(0)
+    # allData.append(courseDataAllMPs)
+    # allData.pop(0)
+    # f = open("allData.txt","x")
+    # for c in range(len(allData)):
+    #     f.write(str(c)+": "+str(courses[c].courseName)+"\n")
+    #     for m in allData[c]:
+    #         for d in m:
+    #             try:
+    #                 f.write(str(d[0])+"\t"+str(d[1])+"\t"+str(d[2])+"\t"+str(d[3])+"\n")
+    #             except IndexError:
+    #                 print(d)
+    # f.close()
+        
+
+        
+
+
     # restart()
-    interface = userActions.UserActions(studentName,studentID,1)
-    # interface.setMP(1)
-    for i in interface.getDailyCourseGrades(5,1,9,2019,1,11,2019):
-        print(str(i[0])+"\t"+str(i[1]))
+    
+    # interface.setMP(2)
+    
+        
+    # mp = 1
+    # # restart()
+    # interface = userActions.UserActions(studentName,studentID,1)
+    # # interface.setMP(1)
+    # for i in interface.getDailyCourseGrades(5,1,9,2019,1,11,2019):
+    #     print(str(i[0])+"\t"+str(i[1])+"\t"+str(i[2])+"\t"+str(i[3]))
     
 
-    # print(interface.getCourseGradeOnDay(5,20,12,2019,2))
+    # print(interface.getCourseStatsOnDay(5,20,12,2019,2))
 
 def userAct2():
     # ------------------------------------------- TEST USER ACTIONS -------------------------------------------
@@ -273,7 +340,7 @@ def userAct2():
     print(courses[courseAns].courseName)
     # for i in range(len(courses[courseAns].assignments)):
         # print(courses[courseAns].assignments[i].assignmentName)
-    mpStartDates = [[1,9,2019],[2,11,2019],[25,1,2020],[4,4,2020]] # marking period start dates
+    mpStartDates = [[1,9,2019],[2,11,2019],[25,1,2020],[4,4,2020]] # marking period start dates in D/M/Y
 
     # MP 1 (manually - no loop)
     d1 = mpStartDates[0][0]

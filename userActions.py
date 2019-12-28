@@ -23,13 +23,13 @@ class UserActions():
         self.courses = []
         extractor.mp = mp
         extractor.courses = []
-        extractor.restart()
+        extractor.restart(mp)
 
-        print(self.mp)
         self.courses = []
         self.getData()
 
     def getData(self):
+        self.courses = []
         # Get courses data
         courseList = extractor.getCourseList()
 
@@ -37,12 +37,11 @@ class UserActions():
             self.courses.append(courseList[i])
 
     # Returns the overall course grade as of a date entered by the user
-    def getCourseGradeOnDay(self,i,day,month,year,mp):
+    def getCourseStatsOnDay(self,i,day,month,year,mp):
         # Store complete (original) list of assignments
         originalAssign = [] 
-        for x in range(len(extractor.courses[i].assignments)):
-            # print(self.courses[i].assignments[x].assignmentName)
-            originalAssign.append(extractor.courses[i].assignments[x])
+        for x in range(len(self.courses[i].assignments)):
+            originalAssign.append(self.courses[i].assignments[x])
         
         # Consider only assignments in that marking period
         d1 = extractor.mpStartDates[mp][0]
@@ -67,13 +66,19 @@ class UserActions():
                 # print(self.courses[i].assignments[x])
                     
         # Get course grade as of the entered date
+        # print(tempAssign)
         extractor.courses[i].assignments = tempAssign
         extractor.courses[i].calculateCurrentMPGrade()
         grade = extractor.courses[i].currentMPGrade
+        # print("TPW: " + str(extractor.courses[i].totalPointsWorth))
+        numPtsRec = extractor.courses[i].getTotalPointsRec()
+        numPtsWorth = extractor.courses[i].getTotalPointsWorth()
+        retArr = [grade,numPtsRec,numPtsWorth]
+        # print(retArr[2])
 
         # Restore course assignments list to original 
         extractor.courses[i].assignments = originalAssign
-        return grade
+        return retArr
             
     
     # Returns array of course grades as of every day in an interval entered by the user
@@ -99,8 +104,8 @@ class UserActions():
 
         for x in range(0,intervalLength+1):
             date = date1.__add__(datetime.timedelta(x))
-            grade = self.getCourseGradeOnDay(i,date.day,date.month,date.year,self.mp)
-            arr1 = [date,grade]
+            grade = self.getCourseStatsOnDay(i,date.day,date.month,date.year,self.mp)
+            arr1 = [date,grade[0],grade[1],grade[2]]
             arr.append(arr1)
         arr.pop(0)
 
@@ -113,8 +118,11 @@ class UserActions():
     def setMP(self, mp):
         self.mp = mp
         extractor.mp = mp
-        extractor.restart()
+        # extractor.restart(mp)
         self.getData()
+
+    def clear(self):
+        self.courses = []
     # def outputData(self, i, arr, first): # Output course data as a text file
     #     try:
     #         # Create new file for output

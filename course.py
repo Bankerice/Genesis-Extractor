@@ -44,6 +44,20 @@ class Course():
         
         self.calculateCurrentMPGrade()
 
+    # Get sum of points received for every assignment in this course (in this MP)
+    def getTotalPointsRec (self) -> int:
+        sum = 0
+        for i in range(len(self.assignments)):
+            sum += self.assignments[i].numPointsReceived
+        return sum
+    
+    # Get sum of points worth for every assignment in this course (in this MP)
+    def getTotalPointsWorth (self) -> int:
+        sum = 0
+        for i in range(len(self.assignments)):
+            sum += self.assignments[i].numTotalPointsWorth
+        return sum
+
     # Calculate the current marking period grade for this course ---- Super inefficient and weighting calculations are off
     def calculateCurrentMPGrade (self):
         total = 0
@@ -56,13 +70,14 @@ class Course():
         for i in range(len(self.assignments)):
             if (self.assignments[i].gradePercent >= 0):
                 self.totalPointsWorth += self.assignments[i].numTotalPointsWorth
+                # if (self.courseName.__contains__("ENG")):
                 totalR[self.assignments[i].category.value-1] += float(self.assignments[i].numPointsReceived)
                 weights[self.assignments[i].category.value-1] = weight[self.assignments[i].category.value-1]
                 totalW[self.assignments[i].category.value-1] += float(self.assignments[i].numTotalPointsWorth)
                 
             if ((self.assignments[i].numTotalPointsWorth == 0) & (self.assignments[i].numPointsReceived > 0)):
                 totalR[self.assignments[i].category.value-1] += float(self.assignments[i].numPointsReceived)
-        
+        # print("TOTAL POINTS WORTH: " + str(self.totalPointsWorth))
         for i in range(0,3):
             if (totalW[i]>0):
                 total += weights[i] * (totalR[i]/totalW[i])
