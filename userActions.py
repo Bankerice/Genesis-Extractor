@@ -69,7 +69,7 @@ class UserActions():
         # print(tempAssign)
         extractor.courses[i].assignments = tempAssign
         extractor.courses[i].calculateCurrentMPGrade()
-        grade = extractor.courses[i].currentMPGrade
+        grade = round(extractor.courses[i].currentMPGrade,2)
         # print("TPW: " + str(extractor.courses[i].totalPointsWorth))
         numPtsRec = extractor.courses[i].getTotalPointsRec()
         numPtsWorth = extractor.courses[i].getTotalPointsWorth()

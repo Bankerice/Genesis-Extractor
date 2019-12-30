@@ -244,9 +244,9 @@ def userAct():
 
 
     allData = [[[[]]]] # [course][[[date,grade,ptsRec,ptsW],...] for mp1, [[date,grade,ptsRec,ptsW],...] for mp2, ...]
+        # allData[0][0][0][1] = [AP ENG/LANG & COMP][mp1][2019-09-01][grade]
     interfaces = []
     for c in range(0,len(courses)):
-        print(courses[c].courseName)
         courseDataAllMPs = [[[]]]
         for x in range(1,currentMP+1):
             m = x
@@ -257,178 +257,45 @@ def userAct():
             if (mpEndDate.compareToDateObj(currentDateObj)>0):
                 mpEndDate = currentDateObj
             dailyGrades = interfaces[len(interfaces)-1].getDailyCourseGrades(c,mpStartDates[m-1][0],mpStartDates[m-1][1],mpStartDates[m-1][2],mpEndDate.date.day,mpEndDate.date.month,mpEndDate.date.year)
-        
             courseDataAllMPs.append(dailyGrades)
-            for i in dailyGrades:
-                print(str(i[0])+"\t"+str(i[1])+"\t"+str(i[2])+"\t"+str(i[3]))
-
-def getDataForCourse(c,mp):
-    m = mp
-    currentDate = datetime.datetime.today()
-    currentDateObj = date.Date(currentDate.day,currentDate.month,currentDate.year)
-    courseDataAllMPs = [[[]]]
-    interface = userActions.UserActions(studentName,studentID,m)
-    endDates = []
-    mpEndDate = date.Date(mpStartDates[m][0]-1,mpStartDates[m][1],mpStartDates[m][2])
-    if (mpEndDate.compareToDateObj(currentDateObj)>0):
-        mpEndDate = currentDateObj
-    dailyGrades = interface.getDailyCourseGrades(c,mpStartDates[m-1][0],mpStartDates[m-1][1],mpStartDates[m-1][2],mpEndDate.date.day,mpEndDate.date.month,mpEndDate.date.year)
-    courseDataAllMPs.append(dailyGrades)
-    for i in dailyGrades:
-        print(str(i[0])+"\t"+str(i[1])+"\t"+str(i[2])+"\t"+str(i[3]))
-    interface.clear()
-    
-    #     courseDataAllMPs.pop(0)
-    # allData.append(courseDataAllMPs)
-    # allData.pop(0)
-    # f = open("allData.txt","x")
-    # for c in range(len(allData)):
-    #     f.write(str(c)+": "+str(courses[c].courseName)+"\n")
-    #     for m in allData[c]:
-    #         for d in m:
-    #             try:
-    #                 f.write(str(d[0])+"\t"+str(d[1])+"\t"+str(d[2])+"\t"+str(d[3])+"\n")
-    #             except IndexError:
-    #                 print(d)
-    # f.close()
         
+        courseDataAllMPs.pop(0)
+        allData.append(courseDataAllMPs)
+    allData.pop(0)
 
-        
-
-
-    # restart()
+    print("-------------------------------------------------------------------")
     
-    # interface.setMP(2)
+    # allData2 = [list]*len(allData[0][0])
+    allData2 = [[[]]] # [[date[course[infotype]]]...for all dates]
+
+    for m in range(0,len(allData[0])):
+        for d in range(len(allData[0][m])): # for every day in first MP
+            arrC = []
+            for c in range(len(courses)): # for every course
+                arr = [allData[c][m][d][1],allData[c][m][d][2],allData[c][m][d][3]]
+                arrC.append(arr)
+            arrDC = [allData[0][m][d][0], arrC] # [date,[info1,info2,info3]]
+            allData2.append(arrDC)
+    allData2.pop(0)
+
+
+
+    # OUTPUT DATA TO FILE
+    try:
+        outfile = open("outfile.txt","x")
+    except FileExistsError:
+        outfile = open("outfile.txt","w")
+
     
-        
-    # mp = 1
-    # # restart()
-    # interface = userActions.UserActions(studentName,studentID,1)
-    # # interface.setMP(1)
-    # for i in interface.getDailyCourseGrades(5,1,9,2019,1,11,2019):
-    #     print(str(i[0])+"\t"+str(i[1])+"\t"+str(i[2])+"\t"+str(i[3]))
+    for d in range(len(allData2)):
+        print(str(allData2[d][0]))
+        outfile.write(str(allData2[d][0])+"\n") # write date
+        for c in range(len(allData2[d][1])):
+            print("\t{0:30} {1:15} {2:15} {3:15}".format(courses[c].courseName+":: ","Grd:"+str(allData2[d][1][c][0]),"PR:"+str(allData2[d][1][c][1]),"PW:"+str(allData2[d][1][c][2])))
+            outfile.write("\t{0:30} {1:15} {2:15} {3:15}\n".format(courses[c].courseName+":: ","Grd:"+str(allData2[d][1][c][0]),"PR:"+str(allData2[d][1][c][1]),"PW:"+str(allData2[d][1][c][2])))
     
+    outfile.close()
 
-    # print(interface.getCourseStatsOnDay(5,20,12,2019,2))
-
-def userAct2():
-    # ------------------------------------------- TEST USER ACTIONS -------------------------------------------
-    val = False
-    # while (val==0):
-    #     ans = input("Choose MP: ")
-    #     try:
-    #         mpAns = int(ans)
-    #         val = True
-    #     except ValueError:
-    #         val = False
-    mpAns = 2
-    mp = 2
-    interface = userActions.UserActions(studentName,studentID,mpAns)
-    # print(interface.getCourseGradeOnDay(5,20,12,2019,2))
-    
-    # val = False
-    # while (val==0):
-    #     ans = input("Choose Course as number from 0 to " + str(len(courses)-1) + ": ")
-    #     try:
-    #         courseAns = int(ans)
-    #         val = True
-    #     except ValueError:
-    #         val = False
-
-    courseAns = 5
-    courseNum = courseAns
-    print(courses[courseAns].courseName)
-    # for i in range(len(courses[courseAns].assignments)):
-        # print(courses[courseAns].assignments[i].assignmentName)
-    mpStartDates = [[1,9,2019],[2,11,2019],[25,1,2020],[4,4,2020]] # marking period start dates in D/M/Y
-
-    # MP 1 (manually - no loop)
-    d1 = mpStartDates[0][0]
-    m1 = mpStartDates[0][1]
-    y1 = mpStartDates[0][2]
-
-    d2 = mpStartDates[1][0] - 1
-    m2 = mpStartDates[1][1]
-    y2 = mpStartDates[1][2]
-
-    # interface.setMP(1)
-    # mp = 1
-    # print(mp)
-    # arr = interface.getDailyCourseGrades(courseNum,d1,m1,y1,d2,m2,y2)
-    # arrTotal = [[]]
-
-    # for a in range(len(arr)):
-    #     arrTotal.append(arr[a])
-    #     try:
-    #         print(str(arr[a][0])+ "\t" + str(arr[a][1]))
-    #     except IndexError:
-    #         print(str(a) + "\t" + str(len(arr)))
-            
-    # MP 2 (manually - no loop)
-    d1 = mpStartDates[1][0]
-    m1 = mpStartDates[1][1]
-    y1 = mpStartDates[1][2]
-
-    d2 = datetime.datetime.today().day #mpStartDates[2][0] - 1
-    m2 = datetime.datetime.today().month #mpStartDates[2][1]
-    y2 = datetime.datetime.today().year #mpStartDates[2][2]
-
-    mp = 2
-    interface = userActions.UserActions(studentName,studentID,2)
-    # mp = 2
-    # restart()
-    print(mp)
-    arr2 = interface.getDailyCourseGrades(courseNum,d1,m1,y1,d2,m2,y2)
-    
-    
-            
-    for a in range(len(arr2)):
-        # arrTotal.append(arr2[a])
-        try:
-            print(str(arr2[a][0])+ "\t" + str(arr2[a][1]))
-        except IndexError:
-            print(str(a) + "\t" + str(len(arr2)))
-    
-    # print(arrTotal)
-    
-    # for a in range(len(arrTotal)):
-    #     try:
-    #         print(str(arrTotal[a][0]) + "\t" + str(arrTotal[a][1]))
-    #     except IndexError:
-    #         print(str(a) + "\t" + str(len(arrTotal)))
-    
-    
-    # Output data as a text file
-
-    # for a in range (len(courses)):
-    #     courseNum = a
-    #     # if (len(courses[a].code)>0):
-    #     for x in range (0,1): #(0,4): # Goes through every marking period 
-    #         arr = [[]] # [day count][date,grade]
-
-    #         d1 = mpStartDates[x][0]
-    #         m1 = mpStartDates[x][1]
-    #         y1 = mpStartDates[x][2]
-
-    #         if (x<4):
-    #             d2 = datetime.datetime.today().day #mpStartDates[x+1][0] - 1
-    #             m2 = datetime.datetime.today().month #mpStartDates[x+1][1]
-    #             y2 = 2019 #mpStartDates[x+1][2]
-    #         else:
-    #             d2 = 17
-    #             m2 = 6
-    #             y2 = 2020
-            
-    #         interface.setMP(x+1)
-    #         arr = interface.getDailyCourseGrades(courseNum,d1,m1,y1,d2,m2,y2)
-    #         interface.outputData(courseNum, arr, (x==0))
-
-        
-    #         # if (arr!=0):
-    #         #     for i in range(1,len(arr)):
-    #         #         a = arr[i]
-    #         #         print(str(a[0])+":\t"+str(a[1]))
-        
 
 if __name__ == '__main__':
     main()
