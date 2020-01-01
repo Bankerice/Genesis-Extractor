@@ -1,11 +1,12 @@
 import course
 import assignment
-import userActions
+import dataManager
 import datetime
 import date
 import re
 import string
 import os
+
 
 from robobrowser import RoboBrowser
 from bs4 import BeautifulSoup
@@ -16,16 +17,26 @@ re._pattern_type = re.Pattern
 studentName = ""
 studentID = ""
 password = ""
-courses = list(map(course.Course,[]))
+coursesAllMPs = list(map(list(map(course.Course,[])),[]))
+# courses = list(map(course.Course,[]))
 periods = ['A','B','C','D','E','F','G','H']
 mp = 2
-mpStartDates = [[1,9,2019],[2,11,2019],[25,1,2020],[4,4,2020]]
+currentMP = 2
+mpStartDates = [[1,9,2019],[2,11,2019],[25,1,2020],[4,4,2020],[6,18,2020]]
 
 # Body
 def main():
+    # Get current MP based on current date
+    currentDate = datetime.datetime.today()
+    currentDateObj = date.Date(currentDate.day,currentDate.month,currentDate.year)
+    for i in range(0,4):
+        mpStartDate = date.Date(mpStartDates[i][0],mpStartDates[i][1],mpStartDates[i][2])
+        if(currentDateObj.compareToDateObj(mpStartDate)<0):
+            currentMP = i-1
+
     br = RoboBrowser(parser='html.parser')
     mainpageGrades = extractMainPage(br)
-    userAct()
+    manageData()
 
 def restart(newMP):
     br = RoboBrowser(parser='html.parser')
@@ -72,7 +83,6 @@ def extractMainPage(robo):
     soup = BeautifulSoup(courseSchedule,"lxml")
     courseSchedule = ''.join(soup.findAll(text=True))
     createCourseList(courseSchedule)
-    
 
 
     #Converts the HTML of the grade page into a string
@@ -88,20 +98,22 @@ def extractMainPage(robo):
 
     # CREATE ASSIGNMENT LIST
     # Determine course codes for each course
-    for i in range(len(courses)):
-        code = src[src.find(courses[i].courseName[0:7])-90:src.find(courses[i].courseName[0:7])+10]
+    for i in range(len(coursesAllMPs[0])):
+        code = src[src.find(coursesAllMPs[0][i].courseName[0:7])-90:src.find(coursesAllMPs[0][i].courseName[0:7])+10]
         if(len(code)>0):
             code = code[code.find(",")+2:code.find(")")-1]
-            courses[i].code = code[0:code.find(":")]
-            courses[i].section = code[code.find(":")+1:len(code)+1]
+            for m in range(0,currentMP):
+                coursesAllMPs[m][i].code = code[0:code.find(":")]
+                coursesAllMPs[m][i].section = code[code.find(":")+1:len(code)+1]
+
 
     # Create assignment list for each course from course code
-    for i in range(len(courses)):
-        if (len(courses[i].code)>0): # Does not include study hall
-            br.open("https://parents.chclc.org/genesis/parents?tab1=studentdata&tab2=gradebook&tab3=coursesummary&studentid=" + str(studentID) + "&mp=MP" + str(mp) +"&action=form&courseCode=" + str(courses[i].code) + "&courseSection=" + str(courses[i].section))
-            a = str(br.parsed)
-            createAssignmentList(a,i)
-    
+    for m in range(1,currentMP+1):
+        for i in range(len(coursesAllMPs[m-1])):
+            if (len(coursesAllMPs[m-1][i].code)>0): # Does not include study hall
+                br.open("https://parents.chclc.org/genesis/parents?tab1=studentdata&tab2=gradebook&tab3=coursesummary&studentid=" + str(studentID) + "&mp=MP" + str(m) +"&action=form&courseCode=" + str(coursesAllMPs[m-1][i].code) + "&courseSection=" + str(coursesAllMPs[m-1][i].section))
+                a = str(br.parsed)
+                createAssignmentList(a,i,m-1)
 
     #Removes initial Javascript
     src = src[src.find('<!-- Start of Header-->')+len('<!-- Start of Header-->'): len(src)]
@@ -135,12 +147,8 @@ def extractMainPage(robo):
         cName = cInfo[0:cInfo[0:cInfo.index(",")].rfind(" ")]
         cTeacher = cInfo[cInfo[0:cInfo.index(",")].rfind(" ")+1:len(cInfo)-1]
 
-
-    
-   
 def createCourseList(courseSchedule):
     #Creates courses list of Course objects from info on Summary page
-    
     #Ignore LBs
     while(courseSchedule.__contains__("L1\n")):
         lb1 = courseSchedule[courseSchedule.find('L1\n'):len(courseSchedule)]
@@ -154,15 +162,21 @@ def createCourseList(courseSchedule):
     courseSchedule = courseSchedule[0:len(courseSchedule)-3]
     courseSchedule = courseSchedule.split("\n\n")
     
+    #Avoids IndexError (list index out of range)
+    tempArr = []
+    coursesAllMPs.append(tempArr.copy())
+    coursesAllMPs.append(tempArr.copy())
+    
     #Create list of Course objects
     for i in range(len(courseSchedule)):
         if courseSchedule[i].startswith("\n"):
             courseSchedule[i] = courseSchedule[i][1:len(courseSchedule[i])]
         courseSchedule[i] = courseSchedule[i].split("\n")
-        courses.append(course.Course(courseSchedule[i][1],courseSchedule[i][5],courseSchedule[i][0],True if courseSchedule[i][2]=='FY' else False))
-        courses[i].assignments = []
+        for m in range(0,currentMP):
+            coursesAllMPs[m].append(course.Course(courseSchedule[i][1],courseSchedule[i][5],courseSchedule[i][0],True if courseSchedule[i][2]=='FY' else False))
+            coursesAllMPs[m][i].assignments = []
 
-def createAssignmentList(a,i):
+def createAssignmentList(a,i,m):
     # Creates a list of assignments for every course
     
     a2 = a[a.find("<b>Assignments</b>")+18:a.find("Assignments graded as")]
@@ -184,8 +198,8 @@ def createAssignmentList(a,i):
         aDate = a[a.find("listrow"):len(a)]
         aDate = aDate[aDate.find("</div>")+1:aDate.find("style")]
         aDate = aDate[aDate.find("<div>")+5:aDate.find("</div>")]
-        year = datetime.date.today().year
-        if (int(aDate[0:aDate.find("/")])>datetime.date.today().year):
+        year = datetime.date.today().year 
+        if (int(aDate[0:aDate.find("/")])>datetime.date.today().month):
             year -= 1
         aDate1 = datetime.date(year,int(aDate[0:aDate.find("/")]),int(aDate[aDate.find("/")+1:len(aDate)]))
         a = a[a.find("Close Window")+10:len(a)]
@@ -208,26 +222,25 @@ def createAssignmentList(a,i):
             
         # Add assignment to course assignments list 
         if (valid):
-            courses[i].addAssignment(assignment,intPtsWorth,intPtsRec,aCategory,aDate1)
+            coursesAllMPs[m][i].addAssignment(assignment,intPtsWorth,intPtsRec,aCategory,aDate1)
             # Fix adding-assignment-to-all-courses issue
-            for j in range(len(courses)):
+            for j in range(len(coursesAllMPs[m])):
                 if (j!=i):
                     temp = []
-                    for x in range(len(courses[j].assignments)):
-                        if ((str(courses[j].assignments[x].assignmentName).__contains__(assignment))==0):
-                            temp.append(courses[j].assignments[x])
-                    courses[j].assignments = temp
+                    for x in range(len(coursesAllMPs[m][j].assignments)):
+                        if ((str(coursesAllMPs[m][j].assignments[x].assignmentName).__contains__(assignment))==0):
+                            temp.append(coursesAllMPs[m][j].assignments[x])
+                    coursesAllMPs[m][j].assignments = temp.copy()
             
     
-def getCourseList():
+def getCourseList(mp):
     courseList = []
-    for i in range(len(courses)):
-        courseList.append(courses[i])
+    for i in range(len(coursesAllMPs[mp-1])):
+        courseList.append(coursesAllMPs[mp-1][i])
     return courseList
 
-def userAct():
+def manageData():
     # Get current MP based on current date
-    currentMP = 2
     currentDate = datetime.datetime.today()
     currentDateObj = date.Date(currentDate.day,currentDate.month,currentDate.year)
     for i in range(0,4):
@@ -235,38 +248,46 @@ def userAct():
         if(currentDateObj.compareToDateObj(mpStartDate)<0):
             currentMP = i-1
     
-    interface = userActions.UserActions(studentName,studentID,2)
+    numDaysInSchoolYear = 0
+    for mp in range(len(coursesAllMPs)):
+        startDate = date.datetime.date(mpStartDates[mp][2],mpStartDates[mp][1],mpStartDates[mp][0])
+        endDate = date.datetime.date(mpStartDates[mp+1][2],mpStartDates[mp+1][1],mpStartDates[mp+1][0]-1)
+        numDaysInSchoolYear += endDate.__sub__(startDate).days
+    firstDay = datetime.date(mpStartDates[0][2],mpStartDates[0][1],mpStartDates[0][0])
 
+    data = [[[list]]]*numDaysInSchoolYear
+    for m in range(len(coursesAllMPs)):    
+        courseDataAllMPs = [[]]
+        dm = dataManager.DataManager(studentName,studentID,coursesAllMPs[m],m+1)
+        for c in range(len(coursesAllMPs[m])):
+            dailyGrades = dm.getDailyCourseGradesForMP(c,m+1)
+            for d in range(len(dailyGrades)):
+                daysSinceStartOfYear = dailyGrades[d][0].__sub__(firstDay).days - 1
+                data[daysSinceStartOfYear-1].append(dailyGrades[d])
 
-    allData = [[[[]]]] # [course][[[date,grade,ptsRec,ptsW],...] for mp1, [[date,grade,ptsRec,ptsW],...] for mp2, ...]
-        # allData[0][0][0][1] = [AP ENG/LANG & COMP][mp1][2019-09-01][grade]
-    interfaces = []
-    for c in range(0,len(courses)):
+    allData = [[[[]]]]  # [course][[[date,grade,ptsRec,ptsW],...] for mp1, [[date,grade,ptsRec,ptsW],...] for mp2, ...]
+                        # allData[0][0][0][1] = [AP ENG/LANG & COMP][mp1][2019-09-01][grade]
+
+    for c in range(0,len(coursesAllMPs[0])):
         courseDataAllMPs = [[[]]]
         for x in range(1,currentMP+1):
             m = x
             mp = m
-            interfaces.append(userActions.UserActions(studentName,studentID,m))
-            endDates = []
-            mpEndDate = date.Date(mpStartDates[m][0]-1,mpStartDates[m][1],mpStartDates[m][2])
-            if (mpEndDate.compareToDateObj(currentDateObj)>0):
-                mpEndDate = currentDateObj
-            dailyGrades = interfaces[len(interfaces)-1].getDailyCourseGrades(c,mpStartDates[m-1][0],mpStartDates[m-1][1],mpStartDates[m-1][2],mpEndDate.date.day,mpEndDate.date.month,mpEndDate.date.year)
+            dm = dataManager.DataManager(studentName,studentID,coursesAllMPs[m-1],m)
+            dailyGrades = dm.getDailyCourseGradesForMP(c,m)
             courseDataAllMPs.append(dailyGrades)
         
         courseDataAllMPs.pop(0)
         allData.append(courseDataAllMPs)
     allData.pop(0)
 
-    print("-------------------------------------------------------------------")
-    
     # allData2 = [list]*len(allData[0][0])
     allData2 = [[[]]] # [[date[course[infotype]]]...for all dates]
 
     for m in range(0,len(allData[0])):
         for d in range(len(allData[0][m])): # for every day in first MP
             arrC = []
-            for c in range(len(courses)): # for every course
+            for c in range(len(coursesAllMPs[m])): # for every course
                 arr = [allData[c][m][d][1],allData[c][m][d][2],allData[c][m][d][3]]
                 arrC.append(arr)
             arrDC = [allData[0][m][d][0], arrC] # [date,[info1,info2,info3]]
@@ -274,25 +295,22 @@ def userAct():
     allData2.pop(0)
 
 
-
     # OUTPUT DATA TO FILE
     try:
-        outfile = open("outfile.txt","x")
+        outfile = open("outfile2.txt","x")
     except FileExistsError:
-        outfile = open("outfile.txt","w")
+        outfile = open("outfile2.txt","w")
 
     
     for d in range(len(allData2)):
         print(str(allData2[d][0]))
         outfile.write(str(allData2[d][0])+"\n") # write date
         for c in range(len(allData2[d][1])):
-            print("\t{0:30} {1:15} {2:15} {3:15}".format(courses[c].courseName+":: ","Grd:"+str(allData2[d][1][c][0]),"PR:"+str(allData2[d][1][c][1]),"PW:"+str(allData2[d][1][c][2])))
-            outfile.write("\t{0:30} {1:15} {2:15} {3:15}\n".format(courses[c].courseName+":: ","Grd:"+str(allData2[d][1][c][0]),"PR:"+str(allData2[d][1][c][1]),"PW:"+str(allData2[d][1][c][2])))
+            print("\t{0:30} {1:15} {2:15} {3:15}".format(coursesAllMPs[0][c].courseName+":: ","Grd:"+str(allData2[d][1][c][0]),"PR:"+str(allData2[d][1][c][1]),"PW:"+str(allData2[d][1][c][2])))
+            outfile.write("\t{0:30} {1:15} {2:15} {3:15}\n".format(coursesAllMPs[0][c].courseName+":: ","Grd:"+str(allData2[d][1][c][0]),"PR:"+str(allData2[d][1][c][1]),"PW:"+str(allData2[d][1][c][2])))
     
     outfile.close()
 
 
 if __name__ == '__main__':
     main()
-
-
