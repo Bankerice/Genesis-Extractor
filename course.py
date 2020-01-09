@@ -1,21 +1,25 @@
+import enum
 import datetime
 import assignment
 
 class Course():
+    Category = enum.Enum("Category",[]) # Category enum created to represent weighting of assignment
+
     code = ""               # course code
     section = ""            # course section
     courseName = ""         # title of course
     teacherName = ""        # name of teacher
     period = "A"            # block period
     currentMPGrade = 0.0    # grade during current marking period as of current date
-    categories = [0.10,0.45,0.45]
+    categories = []
+    weights = []
     numInEachCategory = [0,0,0]
     totalAssignedWeights = 0
     totalPointsWorth = 0
     fullYear = True
-
+    
     # Array representing all assignments with corresponding dates
-    assignments = list(map(assignment.Assignment,[]))
+    assignments = [] #list(map(assignment.Assignment,[]))
 
     # Array representing database of grades as of each day in the year
     months = []
@@ -32,13 +36,34 @@ class Course():
         self.period = period
         self.fullYear = FYSEM
 
+    # Set categories
+    def setCategories(self,cats,weighs):
+        self.categories = []
+        self.weights = []
+
+        for c in range(len(cats)):
+            self.categories.append(cats[c])
+            self.weights.append(float(weighs[c])/100.0)
+        
+        if (len(self.categories)<=0):
+            self.categories.append("TotalPoints")
+            self.weights.append(1.0)
+
+        self.Category = enum.Enum("Category",self.categories)
+        
+
     # Add an assignment to this course
     def addAssignment (self,name, ptsWorth, ptsReceived, category, date):
         infoArray = []
         infoArray.append(ptsWorth)
         infoArray.append(ptsReceived)
-        infoArray.append(category)
+        for i in range(1,len(self.Category)+1):
+            if(category.__contains__(str(self.Category(i).name)) or str(self.Category(i).name).__contains__("TotalPoints")):
+                infoArray.append(self.Category(i))
+                
         infoArray.append(date)
+        infoArray.append(self)
+
         newAssignment = assignment.Assignment(name,infoArray)
         self.assignments.append(newAssignment)
         
@@ -58,34 +83,37 @@ class Course():
             sum += self.assignments[i].numTotalPointsWorth
         return sum
 
-    # Calculate the current marking period grade for this course ---- Super inefficient and weighting calculations are off
+    # Calculate the current marking period grade for this course with weighting ---- WORKS!!! YAY!!!
     def calculateCurrentMPGrade (self):
         total = 0
-        totalR = [0.0,0.0,0.0] # total points received per category
-        totalW = [0.0,0.0,0.0] 
-        weight = [0.5,0.4,0.1]
-        weights = [0.0,0.0,0.0]
+        totalR = [] # total points received per category
+        totalW = []
+        for i in range(len(self.Category)):
+            totalR.append(0.0)
+            totalW.append(0.0)
+         
+        weights = self.weights.copy()
         
         self.totalPointsWorth = 0
         for i in range(len(self.assignments)):
             if (self.assignments[i].gradePercent >= 0):
                 self.totalPointsWorth += self.assignments[i].numTotalPointsWorth
-                # if (self.courseName.__contains__("ENG")):
                 totalR[self.assignments[i].category.value-1] += float(self.assignments[i].numPointsReceived)
-                weights[self.assignments[i].category.value-1] = weight[self.assignments[i].category.value-1]
                 totalW[self.assignments[i].category.value-1] += float(self.assignments[i].numTotalPointsWorth)
                 
             if ((self.assignments[i].numTotalPointsWorth == 0) & (self.assignments[i].numPointsReceived > 0)):
                 totalR[self.assignments[i].category.value-1] += float(self.assignments[i].numPointsReceived)
         # print("TOTAL POINTS WORTH: " + str(self.totalPointsWorth))
-        for i in range(0,3):
+
+        weightSum = 0
+        for i in range(len(self.Category)):
             if (totalW[i]>0):
+                weightSum += weights[i]
                 total += weights[i] * (totalR[i]/totalW[i])
         
-        weightSum = weights[0]+weights[1]+weights[2]
         if (weightSum==0):
             self.currentMPGrade = 0
         else:
-            self.currentMPGrade = total / (weights[0]+weights[1]+weights[2])
+            self.currentMPGrade = total / weightSum
         
                 

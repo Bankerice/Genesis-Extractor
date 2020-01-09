@@ -18,22 +18,22 @@ studentName = ""
 studentID = ""
 password = ""
 coursesAllMPs = list(map(list(map(course.Course,[])),[]))
-# courses = list(map(course.Course,[]))
 periods = ['A','B','C','D','E','F','G','H']
-mp = 2
-currentMP = 2
+
+
+# Get current MP based on current date 
 mpStartDates = [[1,9,2019],[2,11,2019],[25,1,2020],[4,4,2020],[6,18,2020]]
+mp = 1
+currentMP = 1
+currentDate = datetime.datetime.today()
+currentDateObj = date.Date(currentDate.day,currentDate.month,currentDate.year)
+for i in range(0,4):
+    mpStartDate = date.Date(mpStartDates[i][0],mpStartDates[i][1],mpStartDates[i][2])
+    if(currentDateObj.compareToDateObj(mpStartDate)<0):
+        currentMP = i-1
 
 # Body
 def main():
-    # Get current MP based on current date
-    currentDate = datetime.datetime.today()
-    currentDateObj = date.Date(currentDate.day,currentDate.month,currentDate.year)
-    for i in range(0,4):
-        mpStartDate = date.Date(mpStartDates[i][0],mpStartDates[i][1],mpStartDates[i][2])
-        if(currentDateObj.compareToDateObj(mpStartDate)<0):
-            currentMP = i-1
-
     br = RoboBrowser(parser='html.parser')
     mainpageGrades = extractMainPage(br)
     manageData()
@@ -74,7 +74,7 @@ def extractMainPage(robo):
         if(br.url == "https://parents.chclc.org/genesis/sis/view?gohome=true"):
             initUserData()
             os.remove("config.ini")
-            
+
     #Converts the HTML of the Summary page into a string and uses it to create courses list of Course objects
     br.open("https://parents.chclc.org/genesis/parents?tab1=studentdata&tab2=studentsummary&action=form&studentid="+studentID)
     src = str(br.parsed())
@@ -113,7 +113,9 @@ def extractMainPage(robo):
             if (len(coursesAllMPs[m-1][i].code)>0): # Does not include study hall
                 br.open("https://parents.chclc.org/genesis/parents?tab1=studentdata&tab2=gradebook&tab3=coursesummary&studentid=" + str(studentID) + "&mp=MP" + str(m) +"&action=form&courseCode=" + str(coursesAllMPs[m-1][i].code) + "&courseSection=" + str(coursesAllMPs[m-1][i].section))
                 a = str(br.parsed)
+                determineWeighting(a,i,m-1)
                 createAssignmentList(a,i,m-1)
+
 
     #Removes initial Javascript
     src = src[src.find('<!-- Start of Header-->')+len('<!-- Start of Header-->'): len(src)]
@@ -147,6 +149,23 @@ def extractMainPage(robo):
         cName = cInfo[0:cInfo[0:cInfo.index(",")].rfind(" ")]
         cTeacher = cInfo[cInfo[0:cInfo.index(",")].rfind(" ")+1:len(cInfo)-1]
 
+def determineWeighting(a,i,m):
+    # Determines course weighting system
+    a = a[a.find("Grading Information"):a.find("</td></tr></table>")]
+    a = a[a.find("nowrap=\"\">Weight")+16:len(a)]
+    categories = []
+    weights = []
+
+    while (a.__contains__("cellLeft")):
+        categories.append(a[a.find("cellLeft")+23:a.find("</b>")])
+        a = a[a.find("cellRight"):len(a)]
+        weights.append(a[a.find("cellRight")+21:a.find("</td>")])
+        weights[len(weights)-1] = weights[len(weights)-1][0:weights[len(weights)-1].find(".")+2]
+        a = a[a.find("</tr>"):len(a)]
+
+    coursesAllMPs[m][i].setCategories(categories,weights)
+
+
 def createCourseList(courseSchedule):
     #Creates courses list of Course objects from info on Summary page
     #Ignore LBs
@@ -178,11 +197,11 @@ def createCourseList(courseSchedule):
 
 def createAssignmentList(a,i,m):
     # Creates a list of assignments for every course
-    
     a2 = a[a.find("<b>Assignments</b>")+18:a.find("Assignments graded as")]
 
     while(a2.__contains__("<b>")):
         valid = True
+        # Find assignment info and store as STRING
 
         # Assignment Name
         assignment = a2[a2.find("<b>")+3:a2.find("</b>")]
@@ -296,20 +315,20 @@ def manageData():
 
 
     # OUTPUT DATA TO FILE
-    try:
-        outfile = open("outfile2.txt","x")
-    except FileExistsError:
-        outfile = open("outfile2.txt","w")
+    # try:
+    #     outfile = open("outfile2.txt","x")
+    # except FileExistsError:
+    #     outfile = open("outfile2.txt","w")
 
     
     for d in range(len(allData2)):
         print(str(allData2[d][0]))
-        outfile.write(str(allData2[d][0])+"\n") # write date
+    #     outfile.write(str(allData2[d][0])+"\n") # write date
         for c in range(len(allData2[d][1])):
             print("\t{0:30} {1:15} {2:15} {3:15}".format(coursesAllMPs[0][c].courseName+":: ","Grd:"+str(allData2[d][1][c][0]),"PR:"+str(allData2[d][1][c][1]),"PW:"+str(allData2[d][1][c][2])))
-            outfile.write("\t{0:30} {1:15} {2:15} {3:15}\n".format(coursesAllMPs[0][c].courseName+":: ","Grd:"+str(allData2[d][1][c][0]),"PR:"+str(allData2[d][1][c][1]),"PW:"+str(allData2[d][1][c][2])))
+    #         outfile.write("\t{0:30} {1:15} {2:15} {3:15}\n".format(coursesAllMPs[0][c].courseName+":: ","Grd:"+str(allData2[d][1][c][0]),"PR:"+str(allData2[d][1][c][1]),"PW:"+str(allData2[d][1][c][2])))
     
-    outfile.close()
+    # outfile.close()
 
 
 if __name__ == '__main__':
