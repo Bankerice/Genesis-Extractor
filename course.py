@@ -13,10 +13,8 @@ class Course():
     currentMPGrade = 0.0    # grade during current marking period as of current date
     categories = []
     weights = []
-    numInEachCategory = [0,0,0]
-    totalAssignedWeights = 0
     totalPointsWorth = 0
-    fullYear = True
+    semesters = 0           # 0 for full year, otherwise 1 for S1 only, 2 for S2 only
     
     # Array representing all assignments with corresponding dates
     assignments = [] #list(map(assignment.Assignment,[]))
@@ -34,7 +32,7 @@ class Course():
         self.courseName = name
         self.teacherName = teacher
         self.period = period
-        self.fullYear = FYSEM
+        self.semesters = FYSEM
 
     # Set categories
     def setCategories(self,cats,weighs):

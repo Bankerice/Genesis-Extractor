@@ -98,11 +98,11 @@ def extractMainPage(robo):
 
     # CREATE ASSIGNMENT LIST
     # Determine course codes for each course
-    for i in range(len(coursesAllMPs[0])):
-        code = src[src.find(coursesAllMPs[0][i].courseName[0:7])-90:src.find(coursesAllMPs[0][i].courseName[0:7])+10]
-        if(len(code)>0):
-            code = code[code.find(",")+2:code.find(")")-1]
-            for m in range(0,currentMP):
+    for m in range(0,currentMP):
+        for i in range(len(coursesAllMPs[m])):
+            code = src[src.find(coursesAllMPs[m][i].courseName[0:7])-90:src.find(coursesAllMPs[m][i].courseName[0:7])+10]
+            if(len(code)>0):
+                code = code[code.find(",")+2:code.find(")")-1]
                 coursesAllMPs[m][i].code = code[0:code.find(":")]
                 coursesAllMPs[m][i].section = code[code.find(":")+1:len(code)+1]
 
@@ -116,6 +116,27 @@ def extractMainPage(robo):
                 determineWeighting(a,i,m-1)
                 createAssignmentList(a,i,m-1)
 
+    # Deal with study halls
+    for m in range(0,currentMP):
+        studyHallIndex = -1
+        teachers = []
+        # Delete all study halls from coursesAllMPs except the first, but store all teacher names
+        cNum = 0
+        for c in range(len(coursesAllMPs[m])):
+            if (len(coursesAllMPs[m][cNum].code)<=0):
+                teachers.append(coursesAllMPs[m][cNum].teacherName)
+                if (studyHallIndex<0):
+                    studyHallIndex = cNum
+                else:
+                    coursesAllMPs[m].__delitem__(cNum)
+                    cNum-=1
+            cNum+=1
+        
+        tn = ""
+        for n in range(len(teachers)):
+            tn += teachers[n] + ("; " if n<len(teachers)-1 else "")
+        coursesAllMPs[m][studyHallIndex].teacherName = tn
+            
 
     #Removes initial Javascript
     src = src[src.find('<!-- Start of Header-->')+len('<!-- Start of Header-->'): len(src)]
@@ -192,8 +213,11 @@ def createCourseList(courseSchedule):
             courseSchedule[i] = courseSchedule[i][1:len(courseSchedule[i])]
         courseSchedule[i] = courseSchedule[i].split("\n")
         for m in range(0,currentMP):
-            coursesAllMPs[m].append(course.Course(courseSchedule[i][1],courseSchedule[i][5],courseSchedule[i][0],True if courseSchedule[i][2]=='FY' else False))
-            coursesAllMPs[m][i].assignments = []
+            sem = 1 if (m+1==1 or m+1==2) else 2
+            # Only add course if it is for that marking period
+            if(courseSchedule[i][2]=="FY" or courseSchedule[i][2]=="S"+str(sem)):
+                coursesAllMPs[m].append(course.Course(courseSchedule[i][1],courseSchedule[i][5],courseSchedule[i][0],0 if courseSchedule[i][2]=='FY' else int(courseSchedule[i][2][1:len(courseSchedule[i][2])])))
+                coursesAllMPs[m][len(coursesAllMPs[m])-1].assignments = []
 
 def createAssignmentList(a,i,m):
     # Creates a list of assignments for every course
@@ -321,11 +345,11 @@ def manageData():
     #     outfile = open("outfile2.txt","w")
 
     
-    for d in range(len(allData2)):
-        print(str(allData2[d][0]))
+    # for d in range(len(allData2)):
+    #     print(str(allData2[d][0]))
     #     outfile.write(str(allData2[d][0])+"\n") # write date
-        for c in range(len(allData2[d][1])):
-            print("\t{0:30} {1:15} {2:15} {3:15}".format(coursesAllMPs[0][c].courseName+":: ","Grd:"+str(allData2[d][1][c][0]),"PR:"+str(allData2[d][1][c][1]),"PW:"+str(allData2[d][1][c][2])))
+        # for c in range(len(allData2[d][1])):
+        #     print("\t{0:30} {1:15} {2:15} {3:15}".format(coursesAllMPs[0][c].courseName+":: ","Grd:"+str(allData2[d][1][c][0]),"PR:"+str(allData2[d][1][c][1]),"PW:"+str(allData2[d][1][c][2])))
     #         outfile.write("\t{0:30} {1:15} {2:15} {3:15}\n".format(coursesAllMPs[0][c].courseName+":: ","Grd:"+str(allData2[d][1][c][0]),"PR:"+str(allData2[d][1][c][1]),"PW:"+str(allData2[d][1][c][2])))
     
     # outfile.close()
