@@ -81,9 +81,9 @@ class DataManager():
     # Get daily course grades assuming self.courses is accurate for exactly one MP
     def getDailyCourseGradesForMP(self,i,mp): 
         # date1 = date.Date(extractor.mpStartDates[mp-1][0],extractor.mpStartDates[mp-1][1],extractor.mpStartDates[mp-1][2])
-        startDate = date.datetime.date(extractor.mpStartDates[mp-1][2],extractor.mpStartDates[mp-1][1],extractor.mpStartDates[mp-1][0])
-        if (mp<extractor.currentMP):
-            endDate = date.datetime.date(extractor.mpStartDates[mp][2],extractor.mpStartDates[mp][1],extractor.mpStartDates[mp][0]-1)
+        startDate = date.datetime.date(extractor.mpStartDates[mp][2],extractor.mpStartDates[mp][1],extractor.mpStartDates[mp][0])
+        if (mp<extractor.currentMPindex):
+            endDate = date.datetime.date(extractor.mpStartDates[mp+1][2],extractor.mpStartDates[mp+1][1],extractor.mpStartDates[mp+1][0]-1)
         else:
             endDate = datetime.date.today()
         return self.getDailyCourseGrades(i,startDate.day,startDate.month,startDate.year,endDate.day,endDate.month,endDate.year)

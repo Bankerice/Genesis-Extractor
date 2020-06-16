@@ -25,14 +25,16 @@ periods = ['A','B','C','D','E','F','G','H']
 mpStartDates = [[1,9,2019],[2,11,2019],[25,1,2020],[4,4,2020],[18,6,2020]]
 leapYr = mpStartDates[len(mpStartDates)-1][2] % 4 == 0 and (mpStartDates[len(mpStartDates)-1][2] % 100 != 0 or (mpStartDates[len(mpStartDates)-1][2] % 100 == 0 and mpStartDates[len(mpStartDates)-1][2] % 400 == 0))
 daysInMP = [62,84,70,76]
-mp = -1
-currentMP = -1
+mp = 3
+currentMPindex = 3
 currentDate = datetime.datetime.today()
 currentDateObj = date.Date(currentDate.day,currentDate.month,currentDate.year)
 for i in range(0,4):
     mpStartDate = date.Date(mpStartDates[i][0],mpStartDates[i][1],mpStartDates[i][2])
     if(currentDateObj.compareToDateObj(mpStartDate)<0):
-        currentMP = i-1
+        currentMPindex = i-1
+    if(currentMPindex<0): # Outside school year
+        currentMPindex = 3
 
 # Body
 def main():
@@ -55,7 +57,6 @@ def initUserData():
 
 
 def extractMainPage(robo):
-    print(currentMP)
     br = robo
     br.open("https://parents.chclc.org/genesis/sis/view?gohome=true")
 
@@ -101,7 +102,7 @@ def extractMainPage(robo):
 
     # CREATE ASSIGNMENT LIST
     # Determine course codes for each course
-    for m in range(0,currentMP+1):
+    for m in range(0,currentMPindex+1):
         for i in range(len(coursesAllMPs[m])):
             code = src[src.find(coursesAllMPs[m][i].courseName[0:7])-90:src.find(coursesAllMPs[m][i].courseName[0:7])+10]
             if(len(code)>0):
@@ -111,7 +112,7 @@ def extractMainPage(robo):
 
 
     # Create assignment list for each course from course code
-    for m in range(1,currentMP+2):
+    for m in range(1,currentMPindex+2):
         print("MP: " + str(m))
         for i in range(len(coursesAllMPs[m-1])):
             if (len(coursesAllMPs[m-1][i].code)>0): # Does not include study hall
@@ -122,7 +123,7 @@ def extractMainPage(robo):
         print("complete")
 
     # Deal with study halls
-    for m in range(0,currentMP+1):
+    for m in range(0,currentMPindex+1):
         studyHallIndex = -1
         teachers = []
         # Delete all study halls from coursesAllMPs except the first, but store all teacher names
@@ -209,11 +210,8 @@ def createCourseList(courseSchedule):
     
     #Avoids IndexError (list index out of range)
     tempArr = []
-    for x in range(0,currentMP+1):
+    for x in range(0,currentMPindex+1):
         coursesAllMPs.append(tempArr.copy())
-    # coursesAllMPs.append(tempArr.copy())
-    # coursesAllMPs.append(tempArr.copy())
-    # coursesAllMPs.append(tempArr.copy())
 
 
     
@@ -222,7 +220,7 @@ def createCourseList(courseSchedule):
         if courseSchedule[i].startswith("\n"):
             courseSchedule[i] = courseSchedule[i][1:len(courseSchedule[i])]
         courseSchedule[i] = courseSchedule[i].split("\n")
-        for m in range(0,currentMP+1):
+        for m in range(0,currentMPindex+1):
             sem = 1 if (m+1==1 or m+1==2) else 2
             # Only add course if it is for that marking period
             if(courseSchedule[i][2]=="FY" or courseSchedule[i][2]=="S"+str(sem)):
@@ -296,10 +294,14 @@ def manageData():
     # Get current MP based on current date
     currentDate = datetime.datetime.today()
     currentDateObj = date.Date(currentDate.day,currentDate.month,currentDate.year)
-    # for i in range(0,4):
-    #     mpStartDate = date.Date(mpStartDates[i][0],mpStartDates[i][1],mpStartDates[i][2])
-    #     if(currentDateObj.compareToDateObj(mpStartDate)<0):
-    #         currentMP = i-1
+    currentMPindex = 3
+
+    for i in range(0,4):
+        mpStartDate = date.Date(mpStartDates[i][0],mpStartDates[i][1],mpStartDates[i][2])
+        if(currentDateObj.compareToDateObj(mpStartDate)<0):
+            currentMPindex = i-1
+    if(currentMPindex<0): # Current date is outside of school year
+        currentMPindex = 3 # 4th marking period
     
     numDaysInSchoolYear = 0
     for mp in range(len(coursesAllMPs)):
@@ -309,7 +311,6 @@ def manageData():
         daysInMP[mp] = endDate.__sub__(startDate).days
         numDaysInSchoolYear += daysInMP[mp]#endDate.__sub__(startDate).days
     firstDay = datetime.date(mpStartDates[0][2],mpStartDates[0][1],mpStartDates[0][0])
-    print("numDaysInSchoolYear" + str(numDaysInSchoolYear))
 
     # for mp in range(len(coursesAllMPs)):
     #     for c in range(len(coursesAllMPs[mp])):
@@ -320,19 +321,18 @@ def manageData():
 
 
 
-    data = [[[list]]]*numDaysInSchoolYear
+    data = [[[list]]]*(numDaysInSchoolYear+1)
     for m in range(len(coursesAllMPs)):
         courseDataAllMPs = [[]]
         dm = dataManager.DataManager(studentName,studentID,coursesAllMPs[m],m+1)
         for c in range(len(coursesAllMPs[m])):
-            dailyGrades = dm.getDailyCourseGradesForMP(c,m+1)
+            dailyGrades = dm.getDailyCourseGradesForMP(c,m)
             for d in range(len(dailyGrades)):
                 daysSinceStartOfYear = dailyGrades[d][0].__sub__(firstDay).days - 1
                 try:
                     data[daysSinceStartOfYear-1].append(dailyGrades[d])
                 except IndexError:
-                    print(daysSinceStartOfYear-1)
-                    print(d)
+                    print("IndexError")
                 
 
     allData = [[[[]]]]  # [course][[[date,grade,ptsRec,ptsW],...] for mp1, [[date,grade,ptsRec,ptsW],...] for mp2, ...]
@@ -340,11 +340,10 @@ def manageData():
 
     for c in range(0,len(coursesAllMPs[0])):
         courseDataAllMPs = [[[]]]
-        for x in range(1,currentMP+2):
-            m = x
-            mp = m
-            dm = dataManager.DataManager(studentName,studentID,coursesAllMPs[m-1],m)
-            dailyGrades = dm.getDailyCourseGradesForMP(c,m)
+        for x in range(0,currentMPindex+1):
+            mp = x
+            dm = dataManager.DataManager(studentName,studentID,coursesAllMPs[mp],mp)
+            dailyGrades = dm.getDailyCourseGradesForMP(c,mp)
             courseDataAllMPs.append(dailyGrades)
         
         courseDataAllMPs.pop(0)
@@ -363,13 +362,14 @@ def manageData():
             arrDC = [allData[0][m][d][0], arrC] # [date,[info1,info2,info3]]
             allData2.append(arrDC)
     allData2.pop(0)
+    
 
 
     # OUTPUT DATA TO FILE
     try:
-        outfile = open("outfile127.txt","x")
+        outfile = open("dailyGradesFile.txt","x")
     except FileExistsError:
-        outfile = open("outfile127.txt","w")
+        outfile = open("dailyGradesFile.txt","w")
 
     mpIndexPlus1 = 1
     for d in range(len(allData2)):
