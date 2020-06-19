@@ -6,6 +6,7 @@ import date
 import re
 import string
 import os
+import json
 
 
 from robobrowser import RoboBrowser
@@ -22,7 +23,7 @@ periods = ['A','B','C','D','E','F','G','H']
 
 
 # Get current MP based on current date 
-mpStartDates = [[1,9,2019],[2,11,2019],[25,1,2020],[4,4,2020],[18,6,2020]]
+mpStartDates = [[1,9,2019],[2,11,2019],[25,1,2020],[4,4,2020],[17,6,2020]]
 leapYr = mpStartDates[len(mpStartDates)-1][2] % 4 == 0 and (mpStartDates[len(mpStartDates)-1][2] % 100 != 0 or (mpStartDates[len(mpStartDates)-1][2] % 100 == 0 and mpStartDates[len(mpStartDates)-1][2] % 400 == 0))
 daysInMP = [62,84,70,76]
 mp = 3
@@ -35,6 +36,12 @@ for i in range(0,4):
         currentMPindex = i-1
     if(currentMPindex<0): # Outside school year
         currentMPindex = 3
+
+
+def Convert(lstLbls,lst): 
+    res_dct = {lstLbls[i]: lst[i] for i in range(0, len(lst))} 
+    return res_dct 
+
 
 # Body
 def main():
@@ -354,13 +361,14 @@ def manageData():
     allData2 = [[[]]] # [[date[course[infotype]]]...for all dates]
 
     for m in range(0,len(allData[0])):
-        for d in range(len(allData[0][m])): # for every day in first MP
-            arrC = []
-            for c in range(len(coursesAllMPs[m])): # for every course
-                arr = [allData[c][m][d][1],allData[c][m][d][2],allData[c][m][d][3]]
-                arrC.append(arr)
-            arrDC = [allData[0][m][d][0], arrC] # [date,[info1,info2,info3]]
-            allData2.append(arrDC)
+        for d in range(len(allData[0][m])): # for every day in MP
+            if(d<=numDaysInSchoolYear):
+                arrC = []
+                for c in range(len(coursesAllMPs[m])): # for every course
+                    arr = [allData[c][m][d][1],allData[c][m][d][2],allData[c][m][d][3]]
+                    arrC.append(arr)
+                arrDC = [allData[0][m][d][0], arrC] # [date,[info1,info2,info3]]
+                allData2.append(arrDC)
     allData2.pop(0)
     
 
@@ -373,17 +381,34 @@ def manageData():
 
     mpIndexPlus1 = 1
     for d in range(len(allData2)):
+        dDate = date.Date(allData2[d][0].day,allData2[d][0].month,allData2[d][0].year)
+        endDate = date.Date(mpStartDates[4][0],mpStartDates[4][1],mpStartDates[4][2])
+        if(dDate.compareToDateObj(endDate)>=0):
+            break # Stop at last day of school
         print(str(allData2[d][0]))
         outfile.write(str(allData2[d][0])+"\n") # write date
+        
         for c in range(len(allData2[d][1])):
-            if (date.Date(allData2[d][0].day,allData2[d][0].month,allData2[d][0].year).compareToDMY(mpStartDates[mpIndexPlus1][0],mpStartDates[mpIndexPlus1][1],mpStartDates[mpIndexPlus1][2])>=0):
-                mpIndexPlus1 += 1
-            if (len(coursesAllMPs[mpIndexPlus1-1][c].code)>0):
-                print("\t{0:30} {1:15} {2:15} {3:15}".format(coursesAllMPs[mpIndexPlus1-1][c].courseName+":: ","Grd:"+str(allData2[d][1][c][0]),"PR:"+str(allData2[d][1][c][1]),"PW:"+str(allData2[d][1][c][2])))
-                outfile.write("\t{0:30} {1:15} {2:15} {3:15}\n".format(coursesAllMPs[mpIndexPlus1-1][c].courseName+":: ","Grd:"+str(allData2[d][1][c][0]),"PR:"+str(allData2[d][1][c][1]),"PW:"+str(allData2[d][1][c][2])))
-            else:
-                print("\t{0:30} {1:15} {2:15} {3:15}".format(coursesAllMPs[mpIndexPlus1-1][c].courseName+":: ","Grd:----","PR:----","PW:----"))
-                outfile.write("\t{0:30} {1:15} {2:15} {3:15}\n".format(coursesAllMPs[mpIndexPlus1-1][c].courseName+":: ","Grd:----","PR:----","PW:----"))
+            try:
+                if (date.Date(allData2[d][0].day,allData2[d][0].month,allData2[d][0].year).compareToDMY(mpStartDates[mpIndexPlus1][0],mpStartDates[mpIndexPlus1][1],mpStartDates[mpIndexPlus1][2])>=0):
+                    mpIndexPlus1 += 1
+                
+                lstLbls = ["Date","Course","Grd","PR","PW"]
+                lst = []
+                if (len(coursesAllMPs[mpIndexPlus1-1][c].code)>0):
+                    lst = [str(allData2[d][0]),coursesAllMPs[mpIndexPlus1-1][c].courseName, allData2[d][1][c][0],allData2[d][1][c][1],allData2[d][1][c][2]]
+                    print("\t{0:30} {1:15} {2:15} {3:15}".format(coursesAllMPs[mpIndexPlus1-1][c].courseName+":: ","Grd:"+str(allData2[d][1][c][0]),"PR:"+str(allData2[d][1][c][1]),"PW:"+str(allData2[d][1][c][2])))
+                    outfile.write("\t{0:30} {1:15} {2:15} {3:15}\n".format(coursesAllMPs[mpIndexPlus1-1][c].courseName+":: ","Grd:"+str(allData2[d][1][c][0]),"PR:"+str(allData2[d][1][c][1]),"PW:"+str(allData2[d][1][c][2])))
+                else:
+                    lst = [str(allData2[d][0]), coursesAllMPs[mpIndexPlus1-1][c].courseName, "----","----","----"]
+                    print("\t{0:30} {1:15} {2:15} {3:15}".format(coursesAllMPs[mpIndexPlus1-1][c].courseName+":: ","Grd:----","PR:----","PW:----"))
+                    outfile.write("\t{0:30} {1:15} {2:15} {3:15}\n".format(coursesAllMPs[mpIndexPlus1-1][c].courseName+":: ","Grd:----","PR:----","PW:----"))
+                with open("dictionary.txt",'a') as json_outfile:
+                    json.dump(Convert(lstLbls,lst),json_outfile,indent=2)
+                    json_outfile.write("\n")
+            except IndexError:
+                break
+
     outfile.close()
 
 
