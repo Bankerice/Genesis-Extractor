@@ -379,6 +379,9 @@ def manageData():
     except FileExistsError:
         outfile = open("dailyGradesFile.txt","w")
 
+    with open("gradesDictionary.txt",'a') as json_outfile:
+        json_outfile.write("[")
+
     mpIndexPlus1 = 1
     for d in range(len(allData2)):
         dDate = date.Date(allData2[d][0].day,allData2[d][0].month,allData2[d][0].year)
@@ -388,8 +391,10 @@ def manageData():
         print(str(allData2[d][0]))
         outfile.write(str(allData2[d][0])+"\n") # write date
         
+
         for c in range(len(allData2[d][1])):
             try:
+                        
                 if (date.Date(allData2[d][0].day,allData2[d][0].month,allData2[d][0].year).compareToDMY(mpStartDates[mpIndexPlus1][0],mpStartDates[mpIndexPlus1][1],mpStartDates[mpIndexPlus1][2])>=0):
                     mpIndexPlus1 += 1
                 
@@ -403,12 +408,15 @@ def manageData():
                     lst = [str(allData2[d][0]), coursesAllMPs[mpIndexPlus1-1][c].courseName, "----","----","----"]
                     print("\t{0:30} {1:15} {2:15} {3:15}".format(coursesAllMPs[mpIndexPlus1-1][c].courseName+":: ","Grd:----","PR:----","PW:----"))
                     outfile.write("\t{0:30} {1:15} {2:15} {3:15}\n".format(coursesAllMPs[mpIndexPlus1-1][c].courseName+":: ","Grd:----","PR:----","PW:----"))
-                with open("dictionary.txt",'a') as json_outfile:
+                with open("gradesDictionary.txt",'a') as json_outfile:
                     json.dump(Convert(lstLbls,lst),json_outfile,indent=2)
-                    json_outfile.write("\n")
+                    if (d<len(allData2) or c<len(allData2[d][1])):
+                        json_outfile.write(",\n")
             except IndexError:
                 break
 
+    with open("gradesDictionary.txt",'a') as json_outfile:
+        json_outfile.write("]")
     outfile.close()
 
 
