@@ -1,6 +1,6 @@
 import re
 import datetime
-import extractor
+import extractor2021 as extractor
 import course
 import assignment
 import date
@@ -67,7 +67,7 @@ class DataManager():
         if ((y2>y1) | ((y2==y1)&((m2>m1)|((m2==m1)&(d2>d1))))):
             intervalLength += (date2.__sub__(date1)).days
         else:
-            print("Second endpoint date must take place after the first")
+            print("Second endpoint date must take place after the first. \nFirst date: " + str(date1) + "\tSecond Date: " + str(date2))
             return 0
 
         for x in range(0,intervalLength+1):
