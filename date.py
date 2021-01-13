@@ -70,6 +70,7 @@ class Date():
     
     def toString(self) -> str:
         ret = str(self.date.year)+" "+str(self.date.month)+" "+str(self.date.day)
+        return ret
 
 
 # Testing
